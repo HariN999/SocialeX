@@ -133,9 +133,10 @@ Here’s what you need for the `.env` files:
 ### Backend (`server/.env`)
 
 ```
-PORT=5000
+PORT=6001
 MONGO_URL=your_mongodb_uri
 JWT_SECRET=your_jwt_secret
+CLIENT_URL=http://localhost:3000
 ```
 
 ### Frontend (`client/.env`)
@@ -147,6 +148,8 @@ REACT_APP_FIREBASE_PROJECT_ID=your_project_id
 REACT_APP_FIREBASE_STORAGE_BUCKET=your_bucket
 REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 REACT_APP_FIREBASE_APP_ID=your_app_id
+REACT_APP_API_URL=http://localhost:6001
+REACT_APP_WS_URL=http://localhost:6001
 ```
 ## 🎥 Demo
 
