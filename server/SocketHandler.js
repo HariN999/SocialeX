@@ -5,6 +5,36 @@ import Stories from './models/Stories.js';
 import User from './models/Users.js'
 
 const SocketHandler = (socket) => {
+
+    const validateChatMembership = async (chatId) => {
+        if (!chatId || typeof chatId !== 'string' || !/^[a-fA-F0-9]{48}$/.test(chatId)) {
+            socket.emit('error', { message: 'Invalid chat identifier structure' });
+            return null;
+        }
+
+        try {
+            const chat = await Chats.findById(chatId);
+            if (!chat) {
+                socket.emit('error', { message: 'Chat not found' });
+                return null;
+            }
+
+            const participantA = chatId.substring(0, 24);
+            const participantB = chatId.substring(24);
+
+            if (socket.user.id !== participantA && socket.user.id !== participantB) {
+                socket.emit('authorization-error', {
+                    message: 'Access denied to this conversation'
+                });
+                return null;
+            }
+
+            return chat;
+        } catch (error) {
+            socket.emit('error', { message: 'Server error validating chat access' });
+            return null;
+        }
+    };
   
     socket.on('postLiked', async ({postId}) =>{
         const userId = socket.user.id;
@@ -98,7 +128,8 @@ const SocketHandler = (socket) => {
 
 
     socket.on('fetch-messages', async ({chatId}) =>{
-        const chat = await Chats.findOne({_id: chatId});
+        const chat = await validateChatMembership(chatId);
+        if (!chat) return;
        
         await socket.join(chatId);
 
@@ -108,7 +139,8 @@ const SocketHandler = (socket) => {
 
     socket.on('update-messages', async ({ chatId }) => {
         try {
-          const chat = await Chats.findOne({ _id: chatId });
+          const chat = await validateChatMembership(chatId);
+          if (!chat) return;
           console.log('updating messages');
           socket.emit('messages-updated', { chat });
         } catch (error) {
@@ -118,6 +150,8 @@ const SocketHandler = (socket) => {
       
       socket.on('new-message', async ({ chatId, id, text, file, date }) => {
         try {
+          const chat = await validateChatMembership(chatId);
+          if (!chat) return;
           const senderId = socket.user.id;
           await Chats.findOneAndUpdate(
             { _id: chatId },
@@ -125,9 +159,9 @@ const SocketHandler = (socket) => {
             { new: true }
           );
       
-          const chat = await Chats.findOne({ _id: chatId });
-          console.log(chat);
-          socket.emit('messages-updated', { chat });
+          const updatedChat = await Chats.findOne({ _id: chatId });
+          console.log(updatedChat);
+          socket.emit('messages-updated', { chat: updatedChat });
           socket.broadcast.to(chatId).emit('message-from-user');
         } catch (error) {
           console.error('Error adding new message:', error);
@@ -159,9 +193,32 @@ const SocketHandler = (socket) => {
 
 
       socket.on('delete-post', async ({postId}) =>{
-        await Post.deleteOne({_id: postId});
-        const posts = await Post.find();
-        socket.emit('post-deleted', {posts});
+        if (!postId) {
+          socket.emit('error', { message: 'Post ID is required' });
+          return;
+        }
+
+        try {
+          const post = await Post.findById(postId);
+          if (!post) {
+            socket.emit('error', { message: 'Post not found' });
+            return;
+          }
+
+          if (post.userId !== socket.user.id) {
+            socket.emit('authorization-error', {
+              message: 'Unauthorized to delete this post'
+            });
+            return;
+          }
+
+          await Post.deleteOne({_id: postId});
+          const posts = await Post.find();
+          socket.emit('post-deleted', {posts});
+        } catch (error) {
+          console.error('Error deleting post:', error);
+          socket.emit('error', { message: 'Server error during post deletion' });
+        }
       });
 
 
