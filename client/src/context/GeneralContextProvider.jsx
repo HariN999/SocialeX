@@ -1,4 +1,4 @@
-import React, { createContext, useReducer, useState } from 'react'
+import React, { createContext, useReducer, useState, useEffect } from 'react'
 import socketIoClient from 'socket.io-client';
 
 export const GeneralContext = createContext();
@@ -6,9 +6,25 @@ export const GeneralContext = createContext();
 
 const WS = 'http://localhost:6001';
 
-const socket = socketIoClient(WS);
+const socket = socketIoClient(WS, {
+  autoConnect: false,
+  auth: {
+    token: localStorage.getItem('userToken')
+  }
+});
 
 export const GeneralContextProvider = ({children}) => {
+
+    useEffect(() => {
+        const token = localStorage.getItem('userToken');
+        if (token) {
+            socket.auth = { token };
+            socket.connect();
+        }
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
 
     const [isCreatPostOpen, setIsCreatePostOpen] = useState(false);
     const [isCreateStoryOpen, setIsCreateStoryOpen] = useState(false);

@@ -9,6 +9,7 @@ import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 
 import authRoutes from './routes/Route.js';
 import SocketHandler from './SocketHandler.js';
@@ -40,6 +41,24 @@ const io = new Server(server, {
     cors: {
         origin: '*',
         methods: ['GET', 'POST', 'PUT', 'DELETE']
+    }
+});
+
+// Middleware to authenticate socket connections
+io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) {
+        return next(new Error("Authentication required"));
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.user = {
+            id: decoded.id
+        };
+        next();
+    } catch (err) {
+        return next(new Error("Invalid or expired token"));
     }
 });
 
