@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react'
 import '../styles/CreatePosts.css'
 import {RxCross2} from 'react-icons/rx' 
 import { GeneralContext } from '../context/GeneralContextProvider'
-import axios from "axios";
+import axios from "../api/axios";
 import {ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import {storage} from '../firebase.js';
 import { v4 as uuidv4 } from 'uuid';

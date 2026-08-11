@@ -21,12 +21,16 @@ export const verifyToken = async (req, res, next) =>{
             next();
     
         }catch(err){
-            res.status(500).json({error: err.message});
+            return res.status(401).json({
+                message: "Invalid or expired token"
+            });
         }
     }
 
     if(!token){
-        return res.status(403);
+        return res.status(401).json({
+            message: "Authentication required"
+        });
     }
    
 }

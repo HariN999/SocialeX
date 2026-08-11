@@ -10,7 +10,7 @@ import Navbar from '../components/Navbar'
 import { AuthenticationContext } from '../context/AuthenticationContextProvider'
 import { GeneralContext } from '../context/GeneralContextProvider'
 import {useParams} from 'react-router-dom';
-import axios from 'axios';
+import axios from '../api/axios';
 
 const Profile = () => {
 

@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import '../styles/Stories.css'
 import { BiPlusCircle } from 'react-icons/bi'
 import { GeneralContext } from '../context/GeneralContextProvider';
-import axios from 'axios';
+import axios from '../api/axios';
 import {RxCross2} from 'react-icons/rx'
 
 const Stories = () => {

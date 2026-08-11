@@ -7,7 +7,6 @@ import { TbNotification } from "react-icons/tb";
 import navProfile from '../images/nav-profile.avif';
 import { GeneralContext } from '../context/GeneralContextProvider';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
 const Navbar = () => {
 

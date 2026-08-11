@@ -6,7 +6,7 @@ import { FiSend } from "react-icons/fi";
 import { FaGlobeAmericas } from "react-icons/fa";
 import {IoIosPersonAdd} from 'react-icons/io'
 import postImg from '../images/nav-profile.avif';
-import axios from 'axios';
+import axios from '../api/axios';
 import { GeneralContext } from '../context/GeneralContextProvider';
 import { useNavigate } from 'react-router-dom';
 

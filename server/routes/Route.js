@@ -2,15 +2,16 @@ import express from 'express';
 import { login, register } from '../controllers/Auth.js';
 import { createPost } from '../controllers/createPost.js';
 import { fetchAllPosts, fetchAllStories, fetchUserImg, fetchUserName } from '../controllers/Posts.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.post('/register', register);
 router.post('/login', login);
-router.post('/createPost', createPost);
-router.get('/fetchAllPosts', fetchAllPosts);
-router.get('/fetchUserName', fetchUserName);
-router.get('/fetchUserImg', fetchUserImg);
-router.get('/fetchAllStories', fetchAllStories);
+router.post('/createPost', verifyToken, createPost);
+router.get('/fetchAllPosts', verifyToken, fetchAllPosts);
+router.get('/fetchUserName', verifyToken, fetchUserName);
+router.get('/fetchUserImg', verifyToken, fetchUserImg);
+router.get('/fetchAllStories', verifyToken, fetchAllStories);
 
 export default router;

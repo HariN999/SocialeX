@@ -4,7 +4,6 @@ import { GeneralContext } from '../../context/GeneralContextProvider'
 import {v4 as uuid} from 'uuid';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { storage } from '../../firebase';
-import axios from 'axios';
 
 const Input = () => {
 
