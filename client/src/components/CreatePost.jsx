@@ -46,7 +46,7 @@ const CreatePost = () => {
             console.log('File available at', downloadURL);
 
             try{
-                const inputs = {userId: localStorage.getItem('userId'), userName: localStorage.getItem('username'), userPic: localStorage.getItem('profilePic'), fileType: postType, file: downloadURL, description: postDescription, location: postLocation, comments:{"New user": "This is my forst comment"}}
+                const inputs = {fileType: postType, file: downloadURL, description: postDescription, location: postLocation, comments:{"New user": "This is my forst comment"}}
                 await axios.post('http://localhost:6001/createPost', inputs)
                 .then( async (res)=>{
                 }).catch((err) =>{
