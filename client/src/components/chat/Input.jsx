@@ -1,77 +1,80 @@
 import React, { useContext, useState } from 'react'
-import { BiImageAdd } from 'react-icons/bi'
 import { GeneralContext } from '../../context/GeneralContextProvider'
-import {v4 as uuid} from 'uuid';
-import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
-import { storage } from '../../firebase';
+import { v4 as uuid } from 'uuid';
+import { BiSend } from 'react-icons/bi';
 
 const Input = () => {
-
-    const {socket, chatData} = useContext(GeneralContext);
-
+    const { socket, chatData } = useContext(GeneralContext);
     const [text, setText] = useState('');
-    const [file, setFile] = useState(null);
+    const [isSending, setIsSending] = useState(false);
 
-    const [uploadProgress, setUploadProgress] = useState();
+    const handleSend = async (e) => {
+        if (e) e.preventDefault();
+        const trimmedText = text.trim();
+        if (!trimmedText || isSending) return;
+        if (!chatData?.chatId || chatData.chatId === 'null') {
+            console.error('No active chat selected');
+            return;
+        }
 
-    const userId = localStorage.getItem('userId');
-
-
-    const handleSend = async () =>{
-
-      if (file){
-
-        const storageRef = ref(storage, uuid());
-        const uploadTask = uploadBytesResumable(storageRef, file);
-
-        uploadTask.on('state_changed', 
-        (snapshot) => {
-            setUploadProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100); 
-        }, 
-        (error) => {
-            console.log(error);
-        }, 
-        () => {
-            getDownloadURL(uploadTask.snapshot.ref).then( async (downloadURL) => {
-            console.log('File available at', downloadURL);
-
-            try{
-              let date = new Date() 
-              await socket.emit('new-message', {chatId: chatData.chatId ,id: uuid(), text: text, file: downloadURL, date: date});
-              setUploadProgress();
-              setText('');
-              setFile(null);
-            }catch(err){
-                console.log(err);
+        try {
+            if (!socket.connected) {
+                const token = localStorage.getItem('userToken');
+                if (token) {
+                    socket.auth = { token };
+                    socket.connect();
+                }
             }
 
+            setIsSending(true);
+            const payload = {
+                chatId: chatData.chatId,
+                id: uuid(),
+                text: trimmedText,
+                file: '',
+                date: new Date()
+            };
 
+            socket.timeout(5000).emit('new-message', payload, (err, response) => {
+                setIsSending(false);
+
+                if (err || !response?.ok) {
+                    console.error('Error sending message:', err || response?.error || 'Message was not accepted');
+                    return;
+                }
+
+                setText('');
             });
+        } catch (err) {
+            setIsSending(false);
+            console.error('Error sending message:', err);
         }
-        );
-
-      }else{
-
-        let date = new Date() 
-        await socket.emit('new-message', {chatId: chatData.chatId ,id: uuid(), text: text,file: '', date: date});
-        setText('');
-      }
-
     }
 
-  return (
-    <div className='input' >
-      <input type="text" placeholder='type something...' onChange={e => setText(e.target.value)} value={text} />
-      <div className="send">
-        <input type="file" style={{display : 'none'}} id='file' onChange={e=> setFile(e.target.files[0])} />
-        <label htmlFor="file" style={{display:'flex'}}>
-          <BiImageAdd />
-          <p style={{fontSize: '12px'}}>{uploadProgress ? Math.floor(uploadProgress) + '%' : ''}</p>
-        </label>
-        <button onClick={handleSend} >Send</button>
-      </div>
-    </div>
-  )
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSend();
+        }
+    }
+
+    return (
+        <div className='input-box-container'>
+            <input
+                type="text"
+                placeholder='Type a message...'
+                onChange={e => setText(e.target.value)}
+                value={text}
+                onKeyDown={handleKeyDown}
+            />
+            <div className="send-action">
+                <button onClick={handleSend} disabled={!text.trim() || isSending} className="send-msg-btn">
+                    <span>Send</span>
+                    <BiSend />
+                </button>
+            </div>
+        </div>
+    )
 }
 
-export default Input
+export default Input;

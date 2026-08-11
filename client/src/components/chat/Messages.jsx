@@ -4,30 +4,30 @@ import { GeneralContext } from '../../context/GeneralContextProvider';
 
 const Messages = () => {
 
-  const {socket} = useContext(GeneralContext)
+  const {socket, chatData} = useContext(GeneralContext)
   const [messages, setMessages] = useState([]);
 
-  const {chatData} = useContext(GeneralContext);
-  
+  useEffect(() => {
+    setMessages([]);
+  }, [chatData.chatId]);
 
   useEffect(()=>{
     const handleMessagesUpdated = ({ chat }) => {
-      console.log('chatuu', chat);
       if (chat) {
-        setMessages(chat.messages);
+        setMessages(chat.messages || []);
       }
     };
-  
-    const handleNewMessage = async () => {
-      console.log('new message', chatData.chatId);
-      socket.emit('update-messages', { chatId: chatData.chatId });
+
+    const handleNewMessage = () => {
+      if (chatData.chatId && chatData.chatId !== 'null') {
+        socket.emit('update-messages', { chatId: chatData.chatId });
+      }
     };
-  
+
     socket.on('messages-updated', handleMessagesUpdated);
     socket.on('message-from-user', handleNewMessage);
-  
+
     return () => {
-      // Clean up event listeners when the component unmounts
       socket.off('messages-updated', handleMessagesUpdated);
       socket.off('message-from-user', handleNewMessage);
     };
@@ -35,14 +35,14 @@ const Messages = () => {
 
   return (
     <div className='messages' >
-      
-      {messages.length > 0 &&  messages.map((message)=>(
-
+      {messages.length > 0 ? messages.map((message)=>(
         <Message message={message} key={message.id} />
-      ))
-      }
-
-</div>
+      )) : (
+        <div className="messageThreadEmpty">
+          <span>No messages yet</span>
+        </div>
+      )}
+    </div>
   )
 }
 

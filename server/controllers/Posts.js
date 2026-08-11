@@ -16,8 +16,7 @@ export const fetchAllPosts = async (req, res) =>{
 export const fetchUserName = async (req, res) =>{
   try {
       const userId = req.body.userId;
-      const user = await User.findById(userId);
-      console.log(userId);
+      const user = await User.findById(userId).select('-password');
       res.status(200).json(user);
     } catch (error) {
       console.error(error);
@@ -28,8 +27,7 @@ export const fetchUserName = async (req, res) =>{
 export const fetchUserImg = async (req, res) =>{
   try {
     const userId = req.body.userId;
-    const user = await User.findOne({_id: userId});
-    console.log(userId);
+    const user = await User.findOne({_id: userId}).select('-password');
     res.status(200).json(user);
     } catch (error) {
       console.error(error);

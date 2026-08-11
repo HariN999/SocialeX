@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import '../styles/landingpage.css';
+import { BiMoon, BiSun } from 'react-icons/bi';
+import { useTheme } from '../context/ThemeContextProvider';
 
 import socialeXLogo from '../images/SocialeX.png';
 import About1 from '../images/about-1.png';
@@ -11,6 +13,7 @@ import Register from '../components/Register';
 const LandingPage = () => {
 
     const [isLoginBox, setIsLoginBox] = useState(true);
+    const { isDark, toggleTheme } = useTheme();
 
 
   return (
@@ -22,6 +25,11 @@ const LandingPage = () => {
                 <li className='header-li'><a href="#home">Home</a></li>
                 <li className='header-li'><a href="#about">About</a> </li>
                 <li className='header-li'><a href="#home">Join now</a></li>
+                <li className='header-li'>
+                    <button type="button" className="landing-theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+                        {isDark ? <BiSun /> : <BiMoon />}
+                    </button>
+                </li>
             </ul>
         </div>
 

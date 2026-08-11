@@ -1,183 +1,193 @@
 import React, { useContext, useEffect, useState } from 'react';
-import '../styles/Posts.css';
-import { AiOutlineHeart, AiTwotoneHeart } from "react-icons/ai";
+import { AiOutlineHeart, AiTwotoneHeart, AiOutlineDelete } from "react-icons/ai";
 import { BiCommentDetail } from "react-icons/bi";
-import { FiSend } from "react-icons/fi";
 import { FaGlobeAmericas } from "react-icons/fa";
-import {IoIosPersonAdd} from 'react-icons/io'
-import postImg from '../images/nav-profile.avif';
+import { IoIosPersonAdd } from 'react-icons/io';
 import axios from '../api/axios';
 import { GeneralContext } from '../context/GeneralContextProvider';
 import { useNavigate } from 'react-router-dom';
+import { renderAvatar } from '../utils/avatar';
+import '../styles/Posts.css';
 
-const Post = () => {
-
+const Post = ({ posts: propsPosts, setPosts: propsSetPosts, fetchPosts: propsFetchPosts }) => {
     const navigate = useNavigate();
+    const { socket } = useContext(GeneralContext);
 
-    const {socket} = useContext(GeneralContext);
+    const [localPosts, setLocalPosts] = useState([]);
+    const [commentText, setCommentText] = useState({});
 
+    const posts = propsPosts || localPosts;
+    const setPosts = propsSetPosts || setLocalPosts;
 
-    const [posts, setPosts] = useState([]);
+    const fetchPosts = propsFetchPosts || (async () => {
+        try {
+            const response = await axios.get('/fetchAllPosts');
+            setPosts(response.data || []);
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+        }
+    });
+
+    const currentUserId = localStorage.getItem("userId");
 
     useEffect(() => {
-        fetchPosts();
-      }, []);
-    
-      const fetchPosts = async () => { 
-        try {
-          const response = await axios.get('http://localhost:6001/fetchAllPosts');
-          const fetchedPosts = response.data;
-          setPosts(fetchedPosts);
-        } catch (error) {
-          console.error(error);
+        if (!propsPosts) {
+            fetchPosts();
         }
-      };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [propsPosts]);
 
-
-
-    //   Like
-
-    const handleLike = (userId, postId) =>{
-        socket.emit('postLiked', {postId});
-
+    const handleLike = (postId) => {
+        socket.emit('postLiked', { postId });
     }
 
-    const handleUnLike = (userId, postId) =>{
-        socket.emit('postUnLiked', {postId});
-
+    const handleUnLike = (postId) => {
+        socket.emit('postUnLiked', { postId });
     }
 
-    
-    useEffect(()=>{
-        socket.on("likeUpdated", ()=>{
-            // alert("likedd");
-        })
+    const handleFollow = (userId) => {
+        socket.emit('followUser', { followingUserId: userId });
+    }
 
-        socket.on('userFollowed', ({following})=>{
+    const handleCommentSubmit = (postId) => {
+        const comment = commentText[postId];
+        if (!comment || !comment.trim()) return;
 
+        socket.emit('makeComment', { postId, comment: comment.trim() });
+        setCommentText(prev => ({ ...prev, [postId]: '' }));
+
+        setTimeout(() => {
+            fetchPosts();
+        }, 150);
+    }
+
+    const handleDeletePost = (postId) => {
+        if (window.confirm("Are you sure you want to delete this post?")) {
+            socket.emit('delete-post', { postId });
+        }
+    }
+
+    useEffect(() => {
+        if (!socket) return;
+
+        socket.on("likeUpdated", () => {
+            fetchPosts();
+        });
+
+        socket.on('userFollowed', ({ following }) => {
             localStorage.setItem('following', following);
-            
-        })
+            fetchPosts();
+        });
 
-    },[socket])
+        socket.on('post-deleted', ({ posts: updatedPosts }) => {
+            setPosts(updatedPosts || []);
+        });
 
+        return () => {
+            socket.off("likeUpdated");
+            socket.off('userFollowed');
+            socket.off('post-deleted');
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [socket]);
 
-    const handleFollow = async (userId) =>{
-        // ownId = current user Id
-        // followingUserId = user you want to follow
-        socket.emit('followUser', {followingUserId: userId});
-    }
+    return (
+        <div className='postsContainer'>
+            {posts && posts.map((post) => {
+                const isLikedByMe = post.likes.includes(currentUserId);
+                const isMyPost = post.userId === currentUserId;
+                const isFollowingAuthor = (localStorage.getItem('following') || '').split(',').includes(post.userId);
 
+                return (
+                    <div className="postCard" key={post._id}>
+                        <div className="postCardHeader">
+                            <div className="avatarWrapper" style={{ cursor: 'pointer' }} onClick={() => navigate(`/profile/${post.userId}`)}>
+                                {renderAvatar(post.userName, post.userPic, "postAvatar")}
+                            </div>
+                            <div className="postHeaderDetails" onClick={() => navigate(`/profile/${post.userId}`)}>
+                                <span className="postAuthorName">{post.userName}</span>
+                                <span className="postAuthorHandle">@{post.userName?.toLowerCase()}</span>
+                                {post.createdAt && (
+                                    <span className="postTimestamp">
+                                        · {new Date(post.createdAt).toLocaleDateString()}
+                                    </span>
+                                )}
+                            </div>
 
+                            {!isMyPost && !isFollowingAuthor && (
+                                <button className="btn btn-sm btn-outline-primary followBtn" onClick={() => handleFollow(post.userId)}>
+                                    <IoIosPersonAdd style={{ marginRight: '4px' }} /> Follow
+                                </button>
+                            )}
 
-    const [comment, setComment] = useState('');
+                            {isMyPost && (
+                                <button className="btn-delete-post" onClick={() => handleDeletePost(post._id)}>
+                                    <AiOutlineDelete />
+                                </button>
+                            )}
+                        </div>
 
-    const handleComment = (postId, username)=>{
-        socket.emit('makeComment', {postId, comment});
-    }
+                        <div className="postCardBody">
+                            <p className="postDescription">{post.description}</p>
 
+                            {post.location && (
+                                <div className="postLocationLabel">
+                                    <FaGlobeAmericas className="locationIcon" />
+                                    <span>{post.location}</span>
+                                </div>
+                            )}
+                        </div>
 
+                        <div className="postCardActions">
+                            <div className="actionItem" onClick={() => isLikedByMe ? handleUnLike(post._id) : handleLike(post._id)}>
+                                {isLikedByMe ? (
+                                    <AiTwotoneHeart className="actionIcon liked" />
+                                ) : (
+                                    <AiOutlineHeart className="actionIcon" />
+                                )}
+                                <span className="actionCount">{post.likes.length}</span>
+                            </div>
 
-  return (
-    <div className='postsContainer'>
+                            <div className="actionItem">
+                                <BiCommentDetail className="actionIcon" />
+                                <span className="actionCount">{post.comments.length}</span>
+                            </div>
+                        </div>
 
-    {posts ? posts.map((post) => {
+                        <div className="postCommentsSection">
+                            <div className="commentComposer">
+                                <input
+                                    type="text"
+                                    placeholder="Post your reply..."
+                                    value={commentText[post._id] || ''}
+                                    onChange={(e) => setCommentText(prev => ({ ...prev, [post._id]: e.target.value }))}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(post._id)}
+                                />
+                                <button
+                                    disabled={!(commentText[post._id] && commentText[post._id].trim())}
+                                    onClick={() => handleCommentSubmit(post._id)}
+                                    className="btn btn-primary btn-sm commentSubmitBtn"
+                                >
+                                    Reply
+                                </button>
+                            </div>
 
-        return(
-
-        <div className="Post" key={post._id}>
-
-        <div className="postTop">
-            <div className="postTopDetails">
-                <img src={post.userPic} alt="" className="userpic" />
-                <h3 className="usernameTop" onClick={()=> navigate(`/profile/${post.userId}`)}>{post.userName}</h3>
-            </div>
-
-            {localStorage.getItem('following').includes(post.userId) || localStorage.getItem('userId') === post.userId ?
-            
-            <></>
-            :
-            <IoIosPersonAdd style={{cursor: "pointer"}} id='addFriendInPost' onClick={()=>handleFollow(post.userId)} />
-             }
-
+                            {post.comments.length > 0 && (
+                                <div className="commentsList">
+                                    {post.comments.map((comment, index) => (
+                                        <div key={index} className="commentItem">
+                                            <span className="commentUser">@{comment[0]?.toLowerCase()}</span>
+                                            <span className="commentText">{comment[1]}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
         </div>
+    );
+};
 
-        { post.fileType === 'photo'?
-                
-                <img src={post.file} className='postimg' alt="" />
-            
-                :
-                
-                <video id="videoPlayer" className='postimg' controls autoPlay muted>
-                    <source src={post.file} />
-                </video>
-                
-                }
-
-        <div className="postReact">
-            <div className="supliconcol">
-
-                {
-                    post.likes.includes(localStorage.getItem('userId')) ?
-
-                    <AiTwotoneHeart className='support reactbtn'  onClick={() => handleUnLike(localStorage.getItem('userId'), post._id)}/>
-
-                    :
-
-                    <AiOutlineHeart className='support reactbtn'  onClick={() => handleLike(localStorage.getItem('userId'), post._id)}/>
-                }
-
-
-                
-                <label htmlFor="support" className='supportCount'>{post.likes.length}</label>
-            </div>
-            {/* <BiCommentDetail className='comment reactbtn' /> */}
-            {/* <FiSend className='share reactbtn' onClick={()=> {handleShare(post)}} /> */}
-            <div className="placeiconcol">
-                <FaGlobeAmericas className='placeicon reactbtn' name='place' />
-                <label htmlFor="place" className='place'>{post.location}</label>
-            </div>
-        </div>
-
-        
-
-        <div className="detail">
-            <div className='descdataWithBtn'>
-                <label htmlFor='username' className="desc labeldata" id='desc'> 
-                    <span style={{fontWeight: 'bold'}}>
-                        {post.userName}
-                    </span> 
-                        &nbsp;   {post.description}
-                </label>
-            </div>
-        </div>
-        <div className="commentsContainer">
-            <div className="makeComment">
-                <input type="text" placeholder='type something...' onChange={(e)=>setComment(e.target.value)}/>
-                {comment.length === 0 ?
-                    <button className='btn btn-primary' disabled>comment</button>
-                :
-                    <button className='btn btn-primary' onClick={()=>handleComment(post._id, localStorage.getItem('username'))} >comment</button>
-                }
-            </div>
-            <div className="commentsBody">
-                <div className="comments">
-                    {post.comments.map((comment)=>{
-                        return(
-
-                            <p><b>{comment[0]}</b> {comment[1]}</p>
-                        )
-                    })}
-                </div>
-            </div>
-        </div>
-        </div>
-        )
-
-    }) : <></>}
-
-    </div>
-  )
-}
-
-export default Post
+export default Post;

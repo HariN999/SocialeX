@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef } from 'react'
 import { GeneralContext } from '../../context/GeneralContextProvider';
+import { renderAvatar } from '../../utils/avatar';
 
 const Message = ({message}) => {
 
@@ -18,17 +19,18 @@ const Message = ({message}) => {
     <div>
         <div ref={ref} className={`message ${message.senderId === userId ? "owner" : ""}`}>
       <div className="messageInfo">
-        <img src={message.senderId === userId ? localStorage.getItem('profilePic') : chatData.user.profilePic} alt="" />
+        {message.senderId === userId ?
+          renderAvatar(localStorage.getItem('username'), localStorage.getItem('profilePic')) :
+          renderAvatar(chatData.user.username, chatData.user.profilePic)
+        }
         <span>{ date.getHours() < 12 ?  date.getHours() + ':' + date.getMinutes() + ' AM' : date.getHours()-12 + ':' + date.getMinutes() + ' PM' }</span>
       </div>
       <div className="messageContent">
         <p>{message.text}</p>
-        {message.file && <img src={message.file} alt="" />}
-        
       </div>
     </div>
     </div>
   )
 }
 
-export default Message
+export default Message;

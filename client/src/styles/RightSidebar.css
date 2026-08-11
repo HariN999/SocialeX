@@ -1,0 +1,158 @@
+.sidebar-right {
+    display: flex;
+    flex-direction: column;
+    width: var(--right-sidebar-width);
+    height: 100vh;
+    padding: 24px;
+    position: sticky;
+    top: 0;
+    right: 0;
+    background-color: var(--bg-primary);
+    gap: 24px;
+    overflow-y: auto;
+    z-index: 10;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.user-profile-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.user-profile-summary:hover {
+    background-color: var(--accent-hover);
+}
+
+.summary-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.summary-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 16px;
+}
+
+.summary-handle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.right-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
+}
+
+.right-card h3 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+    background-color: var(--card-hover);
+}
+
+.suggestion-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.suggestion-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.suggestion-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.suggestion-handle {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.follow-suggestion-btn {
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.trending-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.trending-item {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+}
+
+.trending-category {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.trending-topic {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 14px;
+    margin-top: 2px;
+}
+
+.trending-topic:hover {
+    text-decoration: underline;
+}
+
+.empty-text {
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-align: center;
+    margin: 8px 0;
+}
+
+@media (max-width: 1200px) {
+    .sidebar-right {
+        display: none;
+    }
+}

@@ -1,165 +1,180 @@
-## 📱 SocialeX - Real-Time Social Media App
+# SocialeX
 
-**SocialeX** is a modern, full-stack social media application that enables real-time chat, post sharing, story updates, and secure authentication. It’s built using the **MERN stack** (MongoDB, Express, React, Node.js) along with **Socket.io** for real-time features and **Firebase** for media storage.
+A text-first social networking platform inspired by X/Twitter, built as a portfolio project.
 
----
-
-## 🚀 Features
-
-* 🔐 **User Authentication** (Register/Login with hashed passwords)
-* 🧑‍🤝‍🧑 **Profiles** (Custom profile pic, username, about section)
-* 📝 **Create & View Posts** (Text, image, or video-based posts)
-* 📸 **Stories** (24-hour story feature similar to Instagram)
-* 💬 **Real-Time Chat** (1-on-1 private messaging with file support)
-* 🔔 **Notifications** (For new messages, followers, and story updates)
-* 🔄 **Live Feed** (View all user posts in real-time)
-* 🔒 **End-to-End Security** (JWT, Bcrypt, secure MongoDB storage)
+SocialeX supports user authentication, profiles, follow relationships, text posts, a live feed, likes, user search, and real-time one-to-one messaging with MongoDB persistence.
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
-| Layer          | Technology                 |
-| -------------- | -------------------------- |
-| Frontend       | React.js, Axios, Bootstrap |
-| Backend        | Node.js, Express.js        |
-| Real-Time      | Socket.io                  |
-| Database       | MongoDB (via Mongoose)     |
-| Media Upload   | Firebase Storage           |
-| Authentication | JWT, Bcrypt                |
+**Frontend**
+- React
+- React Router
+- Axios
+- Socket.IO Client
+- CSS
+
+**Backend**
+- Node.js
+- Express
+- Socket.IO
+- JWT
+- Mongoose
+
+**Database**
+- MongoDB Atlas
+
+**Authentication**
+- JWT
+
+**Realtime**
+- Socket.IO
 
 ---
 
-## 📂 Project Structure
+## Current Features
+
+- User registration and login
+- JWT authentication
+- Protected REST API routes
+- User search (partial, case-insensitive)
+- User profiles
+- Follow / unfollow
+- Text post creation (with optional location)
+- Feed
+- Like / unlike
+- Real-time one-to-one text messaging
+- MongoDB message persistence
+- Chat membership authorization
+- Post ownership authorization
+- X/Twitter-inspired interface with light/dark mode
+
+---
+
+## Deferred Features
+
+These are planned for future work, not part of the current release:
+
+- Image and video posts
+- Media uploads
+- Stories
+
+---
+
+## Security
+
+- JWT authentication on protected REST routes
+- Server-derived user identity (client cannot spoof `userId`, `senderId`, or `ownId`)
+- Socket.IO handshake authentication via JWT
+- Post ownership checks before deletion
+- Chat membership validation before read/write
+- Restricted CORS (no wildcard origins)
+- Secrets stored in environment variables only
+
+Never commit real credentials.
+
+---
+
+## Project Structure
 
 ```
 SocialeX/
-├── client/               # React frontend
+├── client/                 # React frontend
+│   ├── public/
 │   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── context/
-│       └── App.js
-├── server/               # Node.js backend
+│       ├── api/            # Axios configuration
+│       ├── components/     # UI components
+│       ├── context/        # React context providers
+│       ├── pages/          # Route pages
+│       ├── styles/         # CSS
+│       └── utils/          # Shared helpers
+├── server/                 # Express + Socket.IO backend
 │   ├── controllers/
+│   ├── middleware/
 │   ├── models/
 │   ├── routes/
 │   └── index.js
-├── .env
-├── README.md
-└── package.json
+└── README.md
 ```
 
 ---
 
-## ⚙️ Setup Instructions
+## Local Setup
 
-### 1️⃣ Clone the Repository
+**Prerequisite:** Node.js 20.x
 
-```bash
-git clone https://github.com/HariN999/SocialeX.git
-cd SocialeX
-```
-
-### 2️⃣ Setup the Backend
+### Backend
 
 ```bash
 cd server
 npm install
+npm start
 ```
 
-Create a `.env` file in the `server/` folder:
+Runs at `http://localhost:6001`
 
-```
-PORT=5000
-MONGO_URL=your_mongo_db_connection_string
-JWT_SECRET=your_jwt_secret
-```
-
-### 3️⃣ Setup the Frontend
+### Frontend
 
 ```bash
-cd ../client
+cd client
 npm install
-```
-
-Create a `.env` file in `client/` for Firebase config:
-
-```
-REACT_APP_FIREBASE_API_KEY=...
-REACT_APP_FIREBASE_PROJECT_ID=...
-```
-
-### 4️⃣ Run the Application
-
-Start backend:
-
-```bash
-cd ../server
 npm start
 ```
 
-Start frontend:
-
-```bash
-cd ../client
-npm start
-```
-
-App runs on:
-🌐 `http://localhost:3000`
+Runs at `http://localhost:3000`
 
 ---
 
-## 📸 Screenshots
+## Environment Variables
 
-# Home Page
+Copy the example files and fill in your own values. Never commit `.env` files.
 
-![image](https://github.com/user-attachments/assets/6020e04b-0960-4baf-8e26-897fc535e135)
-
-|  Posts                                                                                      |   Stories                                                                                  |
-| ------------------------------------------------------------------------------------------- | -----------------------------------------------------------------------------------------  |
-|  ![Posts](https://github.com/user-attachments/assets/66a1b41b-71bc-41de-86fc-d9a7fbeb9a3f)  | ![Stories](https://github.com/user-attachments/assets/f8330ac3-5a30-4a0e-94a4-2cd143a2ad9c)|
-
-
-
-
----
-
-## 🔐 Environment Variables
-
-Here’s what you need for the `.env` files:
-
-### Backend (`server/.env`)
+**client/.env**
 
 ```
-PORT=6001
-MONGO_URL=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-CLIENT_URL=http://localhost:3000
-```
-
-### Frontend (`client/.env`)
-
-```
-REACT_APP_FIREBASE_API_KEY=your_key
-REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
-REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-REACT_APP_FIREBASE_STORAGE_BUCKET=your_bucket
-REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-REACT_APP_FIREBASE_APP_ID=your_app_id
 REACT_APP_API_URL=http://localhost:6001
 REACT_APP_WS_URL=http://localhost:6001
 ```
-## 🎥 Demo
 
-Watch a full walkthrough of SocialeX in action:
+**server/.env**
 
-https://drive.google.com/file/d/1xDJ8aYb451fFts_2vn38VSUtOckL1Ajr/view?usp=drive_link
+```
+MONGO_URL=<your MongoDB Atlas connection string>
+JWT_SECRET=<your JWT secret>
+PORT=6001
+CLIENT_URL=http://localhost:3000
+```
 
-## 🙋‍♂️ Support
-
-If you found this project useful, give it a ⭐ on GitHub!
-Need help? Feel free to [open an issue](https://github.com/HariN999/SocialeX/issues).
+Use a strong JWT secret and your own MongoDB Atlas URI.
 
 ---
+
+## Testing
+
+```bash
+cd client
+npm test -- --watchAll=false
+npm run build
+```
+
+```bash
+cd server
+node test-security.js
+```
+
+---
+
+## Roadmap
+
+- Media / photo / video posts
+- Stories
+- Notifications
+- Additional social features
+- Production deployment improvements
+
+---
+
+## License
+
+Portfolio project — see repository for details.

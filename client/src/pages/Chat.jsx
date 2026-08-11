@@ -1,24 +1,20 @@
 import React from 'react'
 import '../styles/Chat.css'
-import HomeLogo from '../components/HomeLogo'
-import Navbar from '../components/Navbar'
+import LeftSidebar from '../components/Sidebar'
 import Sidebar from '../components/chat/Sidebar'
 import UserChat from '../components/chat/UserChat'
 
 const Chat = () => {
   return (
-    <div className='chatPage'>
-      {/* <HomeLogo /> */}
-      <Navbar />
+    <div className='chatPageContainer'>
+      <LeftSidebar />
 
-    <div className="home">
-
-      <Sidebar  />
-      <UserChat />
-      
-    </div>
+      <div className="chatMainArea">
+        <Sidebar />
+        <UserChat />
+      </div>
     </div>
   )
 }
 
-export default Chat
+export default Chat;

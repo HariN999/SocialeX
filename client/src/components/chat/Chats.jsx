@@ -1,60 +1,100 @@
-import React, { useContext, useEffect, useState } from 'react'
-import {GeneralContext} from '../../context/GeneralContextProvider';
+import React, { useContext, useEffect } from 'react'
+import { GeneralContext } from '../../context/GeneralContextProvider';
+import { renderAvatar } from '../../utils/avatar';
+
 const Chats = () => {
+  const { socket, chatFirends, setChatFriends, dispatch, chatData } = useContext(GeneralContext)
 
-  const {socket, chatFirends, setChatFriends, dispatch, chatData} = useContext(GeneralContext)
+  const formatRelativeTime = (dateValue) => {
+    if (!dateValue) return '';
 
-  const userId = localStorage.getItem('userId');
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return '';
 
-  // const [friendsData, setFriendsData] = useState([])
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (seconds < 60) return 'now';
 
-  useEffect(()=>{
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
 
-    socket.emit('fetch-friends');
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h`;
 
-    socket.on("friends-data-fetched", ({friendsData})=>{
-      setChatFriends(friendsData);
-    });
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d`;
 
-  },[])
-
-  
-  const handleSelect = (data) =>{
-    dispatch({type:"CHANGE_USER", payload: data});
-    console.log(chatData);
-
-
+    const weeks = Math.floor(days / 7);
+    return `${weeks}w`;
   }
-  useEffect(()=>{
 
-    if(chatData.chatId !== null){
-      socket.emit('fetch-messages', {chatId: chatData.chatId})
-      
+  useEffect(() => {
+    if (!socket) return;
+
+    const requestFriends = () => {
+      if (socket.connected) {
+        socket.emit('fetch-friends');
+      }
+    };
+
+    const handleFriendsFetched = ({ friendsData }) => {
+      setChatFriends(friendsData || []);
+    };
+
+    socket.on('connect', requestFriends);
+    socket.on("friends-data-fetched", handleFriendsFetched);
+    socket.on('messages-updated', requestFriends);
+    requestFriends();
+
+    return () => {
+      socket.off('connect', requestFriends);
+      socket.off("friends-data-fetched", handleFriendsFetched);
+      socket.off('messages-updated', requestFriends);
+    };
+
+  }, [socket, setChatFriends])
+
+  const handleSelect = (data) => {
+    dispatch({ type: "CHANGE_USER", payload: data });
+  }
+
+  useEffect(() => {
+    if (!socket) return;
+    if (chatData.chatId && chatData.chatId !== 'null') {
+      socket.emit('fetch-messages', { chatId: chatData.chatId })
     }
-  }, [chatData])
-
-
+  }, [chatData, socket])
 
   return (
     <div className='chats'>
-      
-   {chatFirends.map((data)=>{
+      {chatFirends && chatFirends.length > 0 ? (
+        chatFirends.map((data) => {
+          const isActive = chatData.user?._id === data._id;
+          const latestMessage = data.latestMessage || data.lastMessage;
+          const preview = typeof latestMessage === 'string' ? latestMessage : latestMessage?.text || 'No messages yet';
+          const timestamp = formatRelativeTime(latestMessage?.date || data.updatedAt);
 
-    return(
-      <div className="userInfo" key={data._id} onClick={()=> handleSelect(data)} >  {/* using chatId (combinedId as key(unique id)) */}
-        <img src={data.profilePic} alt="" />
-        <div className="userChatInfo">
-          <span>{data.username}</span>
+          return (
+            <div className={`userInfo ${isActive ? 'active' : ''}`} key={data._id} onClick={() => handleSelect(data)} >
+              {renderAvatar(data.username, data.profilePic, "conversationAvatar")}
+              <div className="userChatInfo">
+                <div className="conversationMetaLine">
+                  <span className="conversationName">{data.username}</span>
+                  {timestamp && <span className="conversationTime">{timestamp}</span>}
+                </div>
+                <span className="conversationHandle">@{data.username?.toLowerCase()}</span>
+                <p className="conversationPreview">{preview}</p>
+              </div>
+            </div>
+          )
+        })
+      ) : (
+        <div className="chatsEmptyState">
+          <h4>No conversations yet</h4>
+          <p>Search for someone to start a conversation.</p>
         </div>
-      </div>
-    )
-
-   })}
-      
-
-    
+      )}
     </div>
   )
 }
 
-export default Chats
+export default Chats;

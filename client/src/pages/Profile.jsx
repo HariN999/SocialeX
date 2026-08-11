@@ -1,337 +1,345 @@
 import React, { useContext, useEffect, useState } from 'react'
-import '../styles/ProfilePage.css'
-import '../styles/Posts.css';
-import { AiOutlineHeart, AiTwotoneHeart } from "react-icons/ai";
-import { BiCommentDetail } from "react-icons/bi";
+import Sidebar from '../components/Sidebar'
+import RightSidebar from '../components/RightSidebar'
+import { AiOutlineHeart, AiTwotoneHeart, AiOutlineDelete, AiOutlineEdit } from "react-icons/ai";
+import { BiCommentDetail, BiLogOut } from "react-icons/bi";
 import { FaGlobeAmericas } from "react-icons/fa";
-import {IoIosPersonAdd} from 'react-icons/io'
-import HomeLogo from '../components/HomeLogo'
-import Navbar from '../components/Navbar'
+import { IoIosPersonAdd } from 'react-icons/io';
 import { AuthenticationContext } from '../context/AuthenticationContextProvider'
 import { GeneralContext } from '../context/GeneralContextProvider'
-import {useParams} from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
+import { renderAvatar } from '../utils/avatar';
+import '../styles/ProfilePage.css';
 
 const Profile = () => {
+    const { logout } = useContext(AuthenticationContext);
+    const { socket, dispatch } = useContext(GeneralContext);
+    const navigate = useNavigate();
 
-  const {logout} = useContext(AuthenticationContext);
+    const { id } = useParams();
+    const currentUserId = localStorage.getItem("userId");
 
-  const {socket} = useContext(GeneralContext);
+    const [userProfile, setUserProfile] = useState({});
+    const [updateProfilePic, setUpdateProfilePic] = useState('');
+    const [updateProfileUsername, setUpdateProfileUsername] = useState('');
+    const [updateProfileAbout, setUpdateProfileAbout] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
 
-  const {id} = useParams();
-  const userId = localStorage.getItem("userId");
+    const [posts, setPosts] = useState([]);
+    const [commentText, setCommentText] = useState({});
 
-  const [userProfile, setUserProfile] = useState([]);
+    useEffect(() => {
+        if (!socket) return;
+        socket.emit("fetch-profile", { _id: id });
+    }, [id, socket]);
 
-const [updateProfilePic, setUpdateProfilePic] = useState('');
-const [updateProfileUsername, setUpdateProfileUsername] = useState('');
-const [updateProfileAbout, setUpdateProfileAbout] = useState('');
+    const fetchPosts = async () => {
+        try {
+            const response = await axios.get('/fetchAllPosts');
+            setPosts(response.data || []);
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+        }
+    };
 
-const [isUpdating, setIsUpdating] = useState(false);
+    useEffect(() => {
+        fetchPosts();
+    }, []);
 
-
-  useEffect(()=>{
-
-    socket.emit("fetch-profile", {_id: id});
-
-    socket.on("profile-fetched", async({profile})=>{
-      setUserProfile(profile);
-      setUpdateProfilePic(profile.profilePic);
-      setUpdateProfileUsername(profile.username);
-      setUpdateProfileAbout(profile.about);
-    })
-
-
-  },[socket])
-
-
-  const handleUpdate = async () =>{
-    socket.emit('updateProfile', {profilePic: updateProfilePic, username: updateProfileUsername, about: updateProfileAbout});
-    setIsUpdating(false);
-  }
-
-
-  const [posts, setPosts] = useState([]);
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const fetchPosts = async () => {
-    try {
-      const response = await axios.get('http://localhost:6001/fetchAllPosts');
-      const fetchedPosts = response.data;
-      setPosts(fetchedPosts);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleLike = (userId, postId) =>{
-    socket.emit('postLiked', {postId});
-
-}
-
-const handleUnLike = (userId, postId) =>{
-    socket.emit('postUnLiked', {postId});
-
-}
-
-const handleFollow = async (userId) =>{
-  socket.emit('followUser', {followingUserId: userId});
-}
-const handleUnFollow = async (userId) =>{
-  socket.emit('unFollowUser', {followingUserId: userId});
-}
-
-useEffect(()=>{
-  socket.on('userFollowed', ({following})=>{
-    localStorage.setItem('following', following);
-})
-
-socket.on('userUnFollowed', ({following})=>{
-  localStorage.setItem('following', following);
-})
-})
-
-
-
-const [followDisplayType, setFollowDisplayType] = useState('followers');
-
-const [comment, setComment] = useState('');
-
-    const handleComment = (postId, username)=>{
-        socket.emit('makeComment', {postId, comment});
-        setComment('');
+    const handleUpdate = async () => {
+        socket.emit('updateProfile', {
+            profilePic: updateProfilePic,
+            username: updateProfileUsername,
+            about: updateProfileAbout
+        });
+        setIsUpdating(false);
+        if (id === currentUserId) {
+            localStorage.setItem('profilePic', updateProfilePic);
+            localStorage.setItem('username', updateProfileUsername);
+        }
+        setTimeout(() => {
+            window.location.reload();
+        }, 150);
     }
 
-const handleDeletePost = async (postId) =>{
-    await socket.emit('delete-post', {postId});
-}
+    const handleLike = (postId) => {
+        socket.emit('postLiked', { postId });
+    }
 
-useEffect(()=>{
+    const handleUnLike = (postId) => {
+        socket.emit('postUnLiked', { postId });
+    }
 
-  socket.on('post-deleted', async ({posts})=>{
-    
-    setPosts(posts)
-  })
+    const handleFollow = (userId) => {
+        socket.emit('followUser', { followingUserId: userId });
+    }
 
-},[socket])
+    const handleUnFollow = (userId) => {
+        socket.emit('unFollowUser', { followingUserId: userId });
+    }
 
+    const handleCommentSubmit = (postId) => {
+        const comment = commentText[postId];
+        if (!comment || !comment.trim()) return;
 
-  return (
-    <div className='profilePage'>
-      <HomeLogo />
-      <Navbar />
+        socket.emit('makeComment', { postId, comment: comment.trim() });
+        setCommentText(prev => ({ ...prev, [postId]: '' }));
 
-        <div className="profileCard" style={isUpdating ? {display:'none'}: {display:"flex"}}>
+        setTimeout(() => {
+            fetchPosts();
+        }, 150);
+    }
 
-            <img src={userProfile.profilePic} alt="" />
+    const handleDeletePost = (postId) => {
+        if (window.confirm("Are you sure you want to delete this post?")) {
+            socket.emit('delete-post', { postId });
+        }
+    }
 
-            <h4>{userProfile.username}</h4>
-            <p>{userProfile.about} </p>
+    useEffect(() => {
+        if (!socket) return;
 
-
-            <div className="profileDetailCounts">
-              
-              <div className="followersCount">
-                <p>Followers</p>
-                <p>{userProfile.followers ? userProfile.followers.length : 0}</p>
-              </div>
-              <div className="followingCounts">
-                <p>Following</p>
-                <p>{userProfile.following ? userProfile.following.length : 0}</p>
-              </div>
-            </div>
-
-            <div className="profileControls">
-            {
-              userProfile._id === userId ? 
-
-              <div className="profileControlBtns">
-
-                <button onClick={async () => {await logout()}}>Logout</button>
-
-                <button type="button" className="btn btn-primary" onClick={()=>setIsUpdating(true)}>Edit</button>
-                
-
-              </div>
-
-              :
-              <div className="profileControlBtns">
-
-              {
-                localStorage.getItem('following').includes(userProfile._id) ?
-                <>
-                <button onClick={()=>handleUnFollow(userProfile._id)} style={{backgroundColor: 'rgb(224, 42, 42)'}}>Unfollow</button>
-                <button >Message</button>
-                </>
-                :
-
-                <button onClick={()=>handleFollow(userProfile._id)}>Follow</button>
-
-              }
-
-              </div>
+        socket.on("profile-fetched", ({ profile }) => {
+            if (profile) {
+                setUserProfile(profile);
+                setUpdateProfilePic(profile.profilePic);
+                setUpdateProfileUsername(profile.username);
+                setUpdateProfileAbout(profile.about);
             }
-            </div>
+        });
 
-        </div>
-        
+        socket.on("likeUpdated", () => {
+            fetchPosts();
+        });
 
-        <div className='profileEditCard'style={!isUpdating ? {display:'none'}: {display:"flex"}}>
-          <div class="mb-3">
-            <label for="exampleInputEmail1" class="form-label">Profile Image</label>
-            <input type="text" class="form-control" id="exampleInputEmail1" onChange={(e)=> setUpdateProfilePic(e.target.value)} value={updateProfilePic} />
-          </div>
-          <div class="mb-3">
-            <label for="exampleInputPassword1" class="form-label">Username</label>
-            <input type="text" class="form-control" id="exampleInputPassword1" onChange={(e)=> setUpdateProfileUsername(e.target.value)} value={updateProfileUsername}/>
-          </div>
-          <div class="mb-3">
-            <label for="editAbout" class="form-label">About</label>
-            <input type="text" class="form-control" id="editAbout" onChange={(e)=> setUpdateProfileAbout(e.target.value)} value={updateProfileAbout}/>
-          </div>
-          <button className='btn btn-primary' onClick={handleUpdate}>Update</button>
-        </div>
+        socket.on('userFollowed', ({ following }) => {
+            localStorage.setItem('following', following);
+            fetchPosts();
+            socket.emit("fetch-profile", { _id: id });
+        });
 
+        socket.on('userUnFollowed', ({ following }) => {
+            localStorage.setItem('following', following);
+            fetchPosts();
+            socket.emit("fetch-profile", { _id: id });
+        });
 
+        socket.on('post-deleted', ({ posts: updatedPosts }) => {
+            setPosts(updatedPosts || []);
+        });
 
+        return () => {
+            socket.off("profile-fetched");
+            socket.off("likeUpdated");
+            socket.off('userFollowed');
+            socket.off('userUnFollowed');
+            socket.off('post-deleted');
+        };
+    }, [socket, id]);
 
+    const handleLogoutClick = async () => {
+        await logout();
+        navigate('/landing');
+    };
 
+    const userPosts = posts.filter(post => post.userId === userProfile._id);
+    const followingList = (localStorage.getItem('following') || '').split(',');
+    const isFollowing = followingList.includes(userProfile._id);
 
+    return (
+        <div className='profilePageContainer'>
+            <Sidebar />
 
-
-          <div className="profilePostsContainer">
-          
-          {posts.filter(post => post.userId === userProfile._id).map((post) => {
-            
-
-
-            return(
-
-            <div className="Post" key={post._id}>
-
-            <div className="postTop">
-                <div className="postTopDetails">
-                    <img src={post.userPic} alt="" className="userpic" />
-                    <h3 className="usernameTop">{post.userName}</h3>
+            <div className="profileMainContent">
+                <div className="profileHeader">
+                    <h2>{userProfile.username}'s Profile</h2>
                 </div>
-                <button className='btn btn-danger deletePost' onClick={()=> handleDeletePost(post._id)}>Delete</button>
-            </div>
 
-            { post.fileType === 'photo'?
-                    
-                    <img src={post.file} className='postimg' alt="" />
-                
-                    :
-                    
-                    <video id="videoPlayer" className='postimg' controls autoPlay muted>
-                        <source src={post.file} />
-                    </video>
-                    
-                    }
+                {!isUpdating ? (
+                    <div className="profileInfoCard">
+                        <div className="profileInfoTop">
+                            {renderAvatar(userProfile.username, userProfile.profilePic, "profileDetailAvatar")}
 
-            <div className="postReact">
-                <div className="supliconcol">
+                            <div className="profileInfoActions">
+                                {userProfile._id === currentUserId ? (
+                                    <div className="profileOwnerActions">
+                                        <button className="btn btn-outline-secondary btn-sm" onClick={() => setIsUpdating(true)}>
+                                            <AiOutlineEdit style={{ marginRight: '4px' }} /> Edit Profile
+                                        </button>
+                                        <button className="btn btn-outline-danger btn-sm" onClick={handleLogoutClick}>
+                                            <BiLogOut style={{ marginRight: '4px' }} /> Logout
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="profileVisitorActions">
+                                        {isFollowing ? (
+                                            <button className="btn btn-danger btn-sm" onClick={() => handleUnFollow(userProfile._id)}>Unfollow</button>
+                                        ) : (
+                                            <button className="btn btn-primary btn-sm" onClick={() => handleFollow(userProfile._id)}>
+                                                <IoIosPersonAdd style={{ marginRight: '4px' }} /> Follow
+                                            </button>
+                                        )}
+                                        <button
+                                            className="btn btn-outline-primary btn-sm"
+                                            onClick={() => {
+                                                dispatch({
+                                                    type: 'CHANGE_USER',
+                                                    payload: {
+                                                        _id: userProfile._id,
+                                                        username: userProfile.username,
+                                                        profilePic: userProfile.profilePic
+                                                    }
+                                                });
+                                                navigate('/chat');
+                                            }}
+                                        >
+                                            Message
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                    {
-                        post.likes.includes(localStorage.getItem('userId')) ?
+                        <div className="profileInfoDetails">
+                            <h3>{userProfile.username}</h3>
+                            <span className="profileDetailHandle">@{userProfile.username?.toLowerCase()}</span>
+                            {userProfile.about && <p className="profileDetailAbout">{userProfile.about}</p>}
+                        </div>
 
-                        <AiTwotoneHeart className='support reactbtn'  onClick={() => handleUnLike(localStorage.getItem('userId'), post._id)}/>
-
-                        :
-
-                        <AiOutlineHeart className='support reactbtn'  onClick={() => handleLike(localStorage.getItem('userId'), post._id)}/>
-                    }
-
-
-                    
-                    <label htmlFor="support" className='supportCount'>{post.likes.length}</label>
-                </div>
-                <BiCommentDetail className='comment reactbtn' />
-                {/* <FiSend className='share reactbtn' onClick={()=> {handleShare(post)}} /> */}
-                <div className="placeiconcol">
-                    <FaGlobeAmericas className='placeicon reactbtn' name='place' />
-                    <label htmlFor="place" className='place'>{post.location}</label>
-                </div>
-            </div>
-
-            
-
-            <div className="detail">
-                <div className='descdataWithBtn'>
-                    <label htmlFor='username' className="desc labeldata" id='desc'> 
-                        <span style={{fontWeight: 'bold'}}>
-                            {post.userName}
-                        </span> 
-                            &nbsp;   {post.description}
-                    </label>
-                </div>
-            </div>
-
-            <div className="commentsContainer">
-                <div className="makeComment">
-                    <input type="text" placeholder='type something...' onChange={(e)=>setComment(e.target.value)}/>
-                    {comment.length === 0 ?
-                        <button className='btn btn-primary' disabled>comment</button>
-                    :
-                        <button className='btn btn-primary' onClick={()=>handleComment(post._id, localStorage.getItem('username'))} >comment</button>
-                    }
-                </div>
-                <div className="commentsBody">
-                    <div className="comments">
-                        {post.comments.map((comment)=>{
-                            return(
-
-                                <p><b>{comment[0]}</b> {comment[1]}</p>
-                            )
-                        })}
+                        <div className="profileFollowCounts">
+                            <div className="followCountItem">
+                                <span className="countNumber">{userProfile.following ? userProfile.following.length : 0}</span>
+                                <span className="countLabel">Following</span>
+                            </div>
+                            <div className="followCountItem">
+                                <span className="countNumber">{userProfile.followers ? userProfile.followers.length : 0}</span>
+                                <span className="countLabel">Followers</span>
+                            </div>
+                        </div>
                     </div>
+                ) : (
+                    <div className="profileEditCard">
+                        <h3>Edit Profile</h3>
+                        <div className="mb-3">
+                            <label className="form-label">Profile Image URL</label>
+                            <input type="text" className="form-control" onChange={(e) => setUpdateProfilePic(e.target.value)} value={updateProfilePic} />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label">Username</label>
+                            <input type="text" className="form-control" onChange={(e) => setUpdateProfileUsername(e.target.value)} value={updateProfileUsername} />
+                        </div>
+                        <div className="mb-3">
+                            <label className="form-label">About / Bio</label>
+                            <textarea className="form-control" rows="3" onChange={(e) => setUpdateProfileAbout(e.target.value)} value={updateProfileAbout}></textarea>
+                        </div>
+                        <div className="editActions">
+                            <button className='btn btn-primary btn-sm' onClick={handleUpdate}>Save</button>
+                            <button className='btn btn-outline-secondary btn-sm' onClick={() => setIsUpdating(false)}>Cancel</button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="profileTimelineDivider">
+                    <h4>Posts</h4>
+                </div>
+
+                <div className="profileTimeline">
+                    {userPosts.length > 0 ? (
+                        userPosts.map((post) => {
+                            const isLikedByMe = post.likes.includes(currentUserId);
+                            const isMyPost = post.userId === currentUserId;
+
+                            return (
+                                <div className="postCard" key={post._id}>
+                                    <div className="postCardHeader">
+                                        {renderAvatar(post.userName, post.userPic, "postAvatar")}
+                                        <div className="postHeaderDetails">
+                                            <span className="postAuthorName">{post.userName}</span>
+                                            <span className="postAuthorHandle">@{post.userName?.toLowerCase()}</span>
+                                            {post.createdAt && (
+                                                <span className="postTimestamp">
+                                                    · {new Date(post.createdAt).toLocaleDateString()}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {isMyPost && (
+                                            <button className="btn-delete-post" onClick={() => handleDeletePost(post._id)}>
+                                                <AiOutlineDelete />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="postCardBody">
+                                        <p className="postDescription">{post.description}</p>
+                                        {post.location && (
+                                            <div className="postLocationLabel">
+                                                <FaGlobeAmericas className="locationIcon" />
+                                                <span>{post.location}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="postCardActions">
+                                        <div className="actionItem" onClick={() => isLikedByMe ? handleUnLike(post._id) : handleLike(post._id)}>
+                                            {isLikedByMe ? (
+                                                <AiTwotoneHeart className="actionIcon liked" />
+                                            ) : (
+                                                <AiOutlineHeart className="actionIcon" />
+                                            )}
+                                            <span className="actionCount">{post.likes.length}</span>
+                                        </div>
+
+                                        <div className="actionItem">
+                                            <BiCommentDetail className="actionIcon" />
+                                            <span className="actionCount">{post.comments.length}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="postCommentsSection">
+                                        <div className="commentComposer">
+                                            <input
+                                                type="text"
+                                                placeholder="Post your reply..."
+                                                value={commentText[post._id] || ''}
+                                                onChange={(e) => setCommentText(prev => ({ ...prev, [post._id]: e.target.value }))}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit(post._id)}
+                                            />
+                                            <button
+                                                disabled={!(commentText[post._id] && commentText[post._id].trim())}
+                                                onClick={() => handleCommentSubmit(post._id)}
+                                                className="btn btn-primary btn-sm commentSubmitBtn"
+                                            >
+                                                Reply
+                                            </button>
+                                        </div>
+
+                                        {post.comments.length > 0 && (
+                                            <div className="commentsList">
+                                                {post.comments.map((comment, index) => (
+                                                    <div key={index} className="commentItem">
+                                                        <span className="commentUser">@{comment[0]?.toLowerCase()}</span>
+                                                        <span className="commentText">{comment[1]}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="emptyTimelineState">
+                            <p>No posts yet from this user.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            </div>
-            )
-
-            })}
-
-
-
-          </div>
-
-
-            {/* <div className="profileFollowContainer">
-              <div className="followContainerHeader">
-                <h4 id='followers' onClick={()=> setFollowDisplayType('followers')}  style={followDisplayType === 'followers' ? {borderBottom: "2px solid rgba(60, 124, 158, 0.418)"} : {borderBottom: "none"}}>Followers</h4>
-                <h4 id='following' onClick={()=> setFollowDisplayType('following')} style={followDisplayType === 'following' ? {borderBottom: "2px solid rgba(60, 124, 158, 0.418)"} : {borderBottom: "none"}}>Following</h4>
-              </div>
-              <div className="followContainerBody">
-
-                {followDisplayType === 'followers' ?
-                  userProfile.followers.length > 0 ? userProfile.followers.map( async (follower)=>{
-
-                      
-
-                    return(
-
-                      <p>{follower}</p>
-                    )
-                  }): <p style={{textAlign: 'center'}}>No followers</p>
-                :
-                userProfile.following.length > 0 ?userProfile.following.map((follow)=>{
-                  return(
-                    <p>{follow}</p>
-                  )
-                }):
-                <p>No following</p>
-                }
-
-              </div>
-            </div> */}
-
-
+            <RightSidebar />
         </div>
-  )
-}
+    );
+};
 
-export default Profile
+export default Profile;

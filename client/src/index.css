@@ -1,3 +1,64 @@
+:root {
+  --left-nav-width: 250px;
+  --main-content-width: 650px;
+  --right-sidebar-width: 320px;
+
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f9fa;
+  --bg-elevated: #ffffff;
+  --bg-hover: rgba(15, 20, 25, 0.1);
+  --text-primary: #0f1419;
+  --text-secondary: #536471;
+  --border-color: #eff3f4;
+  --accent: #1d9bf0;
+  --accent-hover: rgba(29, 155, 240, 0.1);
+  --danger: #f4212e;
+  --danger-hover: rgba(244, 33, 46, 0.1);
+  --input-bg: #ffffff;
+  --input-border: #cfd9de;
+  --card-hover: #f7f9fa;
+  --shadow: rgba(0, 0, 0, 0.08);
+
+  --message-text: var(--text-primary);
+  --message-muted: var(--text-secondary);
+  --message-soft: var(--bg-secondary);
+  --message-hover: var(--card-hover);
+  --message-active: rgba(29, 155, 240, 0.08);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --bg-elevated: #000000;
+  --bg-hover: rgba(231, 233, 234, 0.1);
+  --text-primary: #e7e9ea;
+  --text-secondary: #71767b;
+  --border-color: #2f3336;
+  --accent: #1d9bf0;
+  --accent-hover: rgba(29, 155, 240, 0.1);
+  --danger: #f4212e;
+  --danger-hover: rgba(244, 33, 46, 0.1);
+  --input-bg: #000000;
+  --input-border: #2f3336;
+  --card-hover: rgba(231, 233, 234, 0.03);
+  --shadow: rgba(255, 255, 255, 0.08);
+
+  --message-soft: #16181c;
+  --message-hover: rgba(231, 233, 234, 0.03);
+  --message-active: rgba(29, 155, 240, 0.15);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -5,9 +66,58 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.App {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Bootstrap overrides for dark mode */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background-color: var(--input-bg);
+  border-color: var(--accent);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.2rem rgba(29, 155, 240, 0.25);
+}
+
+[data-theme="dark"] .form-control::placeholder {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-outline-primary {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+[data-theme="dark"] .btn-outline-primary:hover {
+  background-color: var(--accent-hover);
+  color: var(--accent);
 }

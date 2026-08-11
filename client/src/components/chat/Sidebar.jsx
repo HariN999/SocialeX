@@ -1,17 +1,29 @@
 import React from 'react'
 import Search from './Search'
 import Chats from './Chats'
-// import Navbar from './'
+import { BiEdit, BiChevronDown } from 'react-icons/bi'
 
 const Sidebar = () => {
-  return (
-    <div className='sidebar'  >
+  const focusSearch = () => {
+    document.querySelector('.chat-search-form input')?.focus();
+  }
 
-      {/* <Navbar /> */}
-      
+  return (
+    <div className='sidebar'>
+      <div className="messagesPanelHeader">
+        <h1>Messages</h1>
+        <button type="button" className="newMessageIconButton" onClick={focusSearch} aria-label="New message">
+          <BiEdit />
+        </button>
+      </div>
+      <div className="messagesPanelToolbar">
+        <button type="button" className="conversationFilterButton" aria-label="Conversation filter">
+          <span>All</span>
+          <BiChevronDown />
+        </button>
+      </div>
       <Search />
       <Chats />
-
     </div>
   )
 }

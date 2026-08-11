@@ -13,13 +13,16 @@ console.log('--- STARTING SOCIALEX SECURITY ASSERTIONS ---');
 
 // Mock User DB lookup
 const mockUser = {
-  _id: 'alice_id_123',
+  _id: 'a11ce0000000000000000123',
   username: 'alice',
   profilePic: 'alice_avatar'
 };
-User.findById = async (id) => {
-  if (id === 'alice_id_123') return mockUser;
-  return null;
+User.findById = (id) => {
+  return {
+    select(fields) {
+      return Promise.resolve(id === 'a11ce0000000000000000123' ? mockUser : null);
+    }
+  };
 };
 
 // ==========================================
@@ -43,9 +46,7 @@ async function testRESTAuth() {
   };
 
   const reqMissing = {
-    header() {
-      return null;
-    }
+    headers: {}
   };
 
   await verifyToken(reqMissing, mockRes, () => {
@@ -56,9 +57,8 @@ async function testRESTAuth() {
 
   // Test Case 2: Invalid JWT
   const reqInvalid = {
-    header(name) {
-      if (name === 'Authorization') return 'Bearer invalid_token';
-      return null;
+    headers: {
+      authorization: 'Bearer invalid_token'
     }
   };
 
@@ -66,14 +66,13 @@ async function testRESTAuth() {
     assert.fail('Should not pass with invalid token');
   });
   assert.strictEqual(resStatus, 401);
-  assert.strictEqual(resJson.error, 'Invalid token');
+  assert.strictEqual(resJson.message, 'Invalid or expired token');
 
   // Test Case 3: Authenticated Request
-  const validToken = jwt.sign({ id: 'alice_id_123' }, process.env.JWT_SECRET);
+  const validToken = jwt.sign({ id: 'a11ce0000000000000000123' }, process.env.JWT_SECRET);
   const reqValid = {
-    header(name) {
-      if (name === 'Authorization') return `Bearer ${validToken}`;
-      return null;
+    headers: {
+      authorization: `Bearer ${validToken}`
     }
   };
 
@@ -100,7 +99,7 @@ async function testSocketSecurity() {
   let emittedSuccess = [];
 
   const mockSocket = {
-    user: { id: 'alice_id_123' },
+    user: { id: 'a11ce0000000000000000123' },
     on(event, callback) {
       eventRegistry[event] = callback;
     },
@@ -120,7 +119,7 @@ async function testSocketSecurity() {
   // Test Case 1: delete-post (BOLA Case: Alice deleting Bob's post)
   const mockPostBob = {
     _id: 'post_bob_999',
-    userId: 'bob_id_456'
+    userId: 'b0b000000000000000000456'
   };
 
   Post.findById = async (id) => {
@@ -137,7 +136,7 @@ async function testSocketSecurity() {
   // Test Case 2: delete-post (Success Case: Alice deleting Alice's post)
   const mockPostAlice = {
     _id: 'post_alice_111',
-    userId: 'alice_id_123'
+    userId: 'a11ce0000000000000000123'
   };
   Post.findById = async (id) => {
     if (id === 'post_alice_111') return mockPostAlice;
@@ -155,8 +154,8 @@ async function testSocketSecurity() {
 
   // Test Case 3: Chat Membership (BOLA Case: Alice fetching Bob/Charlie chat)
   // Chat ID is the concatenation of Bob and Charlie IDs.
-  const bobId = 'bob000000000000000000000';
-  const charlieId = 'charlie00000000000000000';
+  const bobId = 'b0b000000000000000000456';
+  const charlieId = 'c0a000000000000000000789';
   const bobCharlieChatId = bobId + charlieId; // 48 chars
 
   Chats.findById = async (id) => {
@@ -172,7 +171,7 @@ async function testSocketSecurity() {
   assert.strictEqual(emittedAuthErrors[0].message, 'Access denied to this conversation');
 
   // Test Case 4: Chat Membership (Success Case: Alice fetching Alice/Bob chat)
-  const aliceBobChatId = 'alice_id_123'.padEnd(24, '0') + 'bob_id_456'.padEnd(24, '0');
+  const aliceBobChatId = 'a11ce0000000000000000123' + 'b0b000000000000000000456';
   Chats.findById = async (id) => {
     if (id === aliceBobChatId) {
       return { _id: aliceBobChatId, messages: [] };

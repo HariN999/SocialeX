@@ -1,62 +1,92 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { TbSearch } from 'react-icons/tb'
 import { GeneralContext } from '../../context/GeneralContextProvider';
+import { renderAvatar } from '../../utils/avatar';
+import '../../styles/Search.css';
 
 const Search = () => {
-
-  const {dispatch, socket} = useContext(GeneralContext)
-
+  const { dispatch, socket } = useContext(GeneralContext)
   const [search, setSearch] = useState('');
-  const userId = localStorage.getItem('userId');
-  const [user, setUser] = useState();
-  const [err, setErr] = useState(false);
+  const [results, setResults] = useState([]);
+  const [err, setErr] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = async (e) =>{
+  const handleSearch = (e) => {
     e.preventDefault();
-    setErr(false);
-    setUser();
-    await socket.emit('chat-user-searched', {username: search});
-    setSearch('')
+    const query = search.trim();
+    if (!query) return;
+
+    if (!socket?.connected) {
+      setErr('Not connected to chat server. Refresh the page and try again.');
+      return;
+    }
+
+    setErr('');
+    setResults([]);
+    setIsLoading(true);
+    socket.emit('chat-user-searched', { username: query });
   }
 
-  useEffect(()=>{
-    socket.on('searched-chat-user', async ({user})=>{
-      setUser(user);
-    });
-    socket.on('no-searched-chat-user', async ()=>{
-      setErr(true);
-    });
-  },[socket])
+  useEffect(() => {
+    if (!socket) return;
 
+    const onFound = ({ users }) => {
+      setIsLoading(false);
+      setResults(users || []);
+      setErr('');
+    };
 
-  const handleSelect = async (user) =>{
-    await dispatch({type:"CHANGE_USER", payload: user});
-    setUser();
+    const onNotFound = () => {
+      setIsLoading(false);
+      setResults([]);
+      setErr('No user found matching that username.');
+    };
+
+    socket.on('searched-chat-users', onFound);
+    socket.on('no-searched-chat-user', onNotFound);
+
+    return () => {
+      socket.off('searched-chat-users', onFound);
+      socket.off('no-searched-chat-user', onNotFound);
+    };
+  }, [socket]);
+
+  const handleSelect = (user) => {
+    dispatch({ type: "CHANGE_USER", payload: user });
+    setResults([]);
+    setSearch('');
+    setErr('');
   }
 
   return (
-    <div className='search'>
-      <div className="searchform">
-        <input type="text" placeholder='Search' onChange={(e)=> {setSearch(e.target.value)}} value={search} />
-        <div className="s-icon" onClick={handleSearch}>
+    <div className='chat-search-container'>
+      <form onSubmit={handleSearch} className="chat-search-form">
+        <input
+          type="text"
+          placeholder="Search people to message"
+          onChange={(e) => setSearch(e.target.value)}
+          value={search}
+        />
+        <button type="submit" className="chat-search-btn">
           <TbSearch />
+        </button>
+      </form>
+
+      {isLoading && <div className="chat-search-status">Searching...</div>}
+      {err && <div className="chat-search-status error-message">{err}</div>}
+
+      {results.map((user) => (
+        <div className="chat-search-result" key={user._id} onClick={() => handleSelect(user)}>
+          {renderAvatar(user.username, user.profilePic, "result-avatar")}
+          <div className="result-info">
+            <span className="result-name">{user.username}</span>
+            <span className="result-handle">@{user.username.toLowerCase()}</span>
+          </div>
+          <span className="chat-result-action">Message</span>
         </div>
-      </div> 
-
-      {err && <span>No User Found!!</span>}
-
-      {user &&  <div className="userInfo" onClick={() => handleSelect(user)} >
-                  <img src={user.profilePic} alt="" />
-                  <div className="userChatInfo">
-                    <span>{user.username}</span>
-                  </div>
-                </div>
-              }
-            
-      
-
+      ))}
     </div>
   )
 }
 
-export default Search
+export default Search;

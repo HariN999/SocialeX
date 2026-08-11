@@ -1,120 +1,173 @@
-.createPostModalBg{
-    /* display: none; */
-    position: fixed;
-    z-index: 8;
-    padding-top: 100px;
-    left: 0;
-    top: 0;
-    width: 100%; 
-    height: 100%;
-    background-color: rgba(0,0,0,0.4);
+.inline-composer {
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 16px;
+    background-color: var(--bg-primary);
+    margin-bottom: 20px;
+    transition: all 0.2s ease-in-out;
 }
 
-.form-select{
-    background-color: rgba(0, 255, 255, 0);
-    color: rgba(8, 82, 147, 0.63);
+.inline-composer.expanded {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-color: #bcd;
 }
 
-.createPostContainer{
-    z-index: 999;
-    padding: 1rem;
-    border-radius: 1rem;
-    position: fixed;
-    top: 20vh;
-    left: 35vw;
-    width: 30vw;
-    height: fit-content;
-    max-height: 90vh;
-    background-color: rgba(221, 236, 246, 0.616);
-    backdrop-filter: blur(20px);
-    border: 1px solid #b4b6b8;
-    box-shadow: rgba(0, 0, 0, 0.2) 0px 12px 28px 0px, rgba(0, 0, 0, 0.1) 0px 2px 4px 0px, rgba(255, 255, 255, 0.05) 0px 0px 0px 1px inset;
+.composer-error {
+    font-size: 13px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
 }
 
-.closeCreatePost{
-    float: right;
-    position: relative;
-    top: 0vh;
-    right: 0vw;
-    color: rgb(106, 107, 107);
-    cursor: pointer;
-    font-size: 1.2rem;
-}
-
-.createPostTitle{
-    font-family: 'Padauk', sans-serif;
-    font-size: 1.5rem;
-    /* padding-bottom: 0.5rem; */
-    color: rgb(8, 82, 147);
-}
-.createPostHr{
-    margin: 0;
-    margin-bottom: 1rem;
-}
-
-.uploadBox{
-    width: 100%;
-}
-
-.uploadBox #uploadPostFile{
-    width: 100%;
-    color: rgba(8, 82, 147, 0.63);
-}
-#uploadPostFile::-webkit-file-upload-button {
-    display: none;
-  }
-#uploadPostFile::before {
-    content: 'Upload Image/Video';
-    display: inline-block;
-    background: linear-gradient(top, #f9f9f9, #e3e3e3);
-    border: 1px solid #c0c1c3;
-    border-radius: 3px;
-    padding: 5px 8px;
-    outline: none;
-    white-space: nowrap;
-    -webkit-user-select: none;
-    cursor: pointer;
-    font-weight: 500;
-    font-size: 10pt;
-    margin-right: 10px;
-  }
-
-
-
-
-.descriptionInput input{
-    border-color: #c0c1c3;
-    width: 100%;
-}
-.descriptionInput label, .postLocation label{
-    color: rgba(8, 82, 147, 0.63);
-}
-
-.createPostBody form{
+.composer-row {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.composer-avatar-col {
+    display: flex;
     align-items: center;
 }
-.createPostBody form button{
-    width: fit-content;
-    border: none;
-    padding: 8px 30px;
-    background-color: rgba(6, 112, 234, 0.479);
-    color: aliceblue;
-    font-weight: 500;
-    border-radius: 0.4rem;
+
+.composer-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
+.composer-input-col {
+    flex-grow: 1;
+}
 
+.composer-textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    font-size: 16px;
+    color: var(--text-primary);
+    padding-top: 8px;
+    line-height: 1.4;
+    background: transparent;
+    font-family: inherit;
+}
 
-@media only screen and (max-width: 600px){
-    .createPostContainer{
-        top: 20vh;
-        left: 5vw;
-        width: 90vw;
-    }
-    .uploadImgBox label{
-        width: 82vw;
+.composer-textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+.composer-compact-btn-col {
+    display: flex;
+    align-items: center;
+    padding-top: 4px;
+}
+
+.composer-expanded-options {
+    margin-top: 12px;
+    padding-left: 52px;
+}
+
+.composer-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.char-counter {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.char-counter.counter-danger {
+    color: var(--danger);
+    font-weight: bold;
+}
+
+.location-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.location-toggle-btn:hover {
+    background-color: rgba(29, 161, 242, 0.1);
+}
+
+.composer-location-input-wrapper {
+    flex-grow: 1;
+    max-width: 250px;
+}
+
+.composer-location-field {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    padding: 4px 12px;
+    font-size: 13px;
+    outline: none;
+    background-color: var(--bg-secondary);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.composer-location-field:focus {
+    background-color: var(--bg-primary);
+    border-color: var(--accent);
+}
+
+.composer-divider {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    margin: 8px 0 12px 0;
+}
+
+.composer-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-cancel {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-cancel:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.post-btn {
+    border-radius: 9999px;
+    font-weight: 700;
+    padding: 6px 16px;
+    font-size: 14px;
+}
+
+@media (max-width: 576px) {
+    .composer-expanded-options {
+        padding-left: 0;
     }
 }

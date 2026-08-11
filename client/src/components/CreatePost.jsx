@@ -1,112 +1,151 @@
-import React, { useContext, useState } from 'react'
-import '../styles/CreatePosts.css'
-import {RxCross2} from 'react-icons/rx' 
-import { GeneralContext } from '../context/GeneralContextProvider'
+import React, { useState, useRef, useEffect } from 'react'
+import { renderAvatar } from '../utils/avatar';
 import axios from "../api/axios";
-import {ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import {storage} from '../firebase.js';
-import { v4 as uuidv4 } from 'uuid';
+import '../styles/CreatePosts.css'
 
-
-const CreatePost = () => {
-
-    const {isCreatPostOpen, setIsCreatePostOpen} = useContext(GeneralContext);
-
-    const [postType, setPostType] = useState('photo');
+const CreatePost = ({ onPostCreated }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
     const [postDescription, setPostDescription] = useState('');
     const [postLocation, setPostLocation] = useState('');
-    const [postFile, setPostFile] = useState(null);
- 
-    const [uploadProgress, setUploadProgress] = useState();
+    const [showLocationInput, setShowLocationInput] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
-    if (uploadProgress === 100){
+    const textareaRef = useRef(null);
+    const username = localStorage.getItem('username');
+    const profilePic = localStorage.getItem('profilePic');
+
+    const handleFocus = () => {
+        setIsExpanded(true);
+    };
+
+    useEffect(() => {
+        if (isExpanded && textareaRef.current) {
+            textareaRef.current.focus();
+        }
+    }, [isExpanded]);
+
+    const handleCancel = () => {
+        if (postDescription.trim()) {
+            if (!window.confirm("Discard your draft post?")) {
+                return;
+            }
+        }
         setPostDescription('');
         setPostLocation('');
-        setPostFile(null);
-        setIsCreatePostOpen(false);
-        setUploadProgress();
-    }
+        setShowLocationInput(false);
+        setErrorMsg('');
+        setIsExpanded(false);
+    };
 
-    const handlePostUplload = async (e) =>{
-        e.preventDefault();
-        
-        const storageRef = ref(storage, uuidv4());
+    const handlePostUpload = async (e) => {
+        if (e) e.preventDefault();
+        if (!postDescription.trim()) return;
+        if (postDescription.length > 280) return;
 
-        const uploadTask = uploadBytesResumable(storageRef, postFile);
-
-        uploadTask.on('state_changed', 
-        (snapshot) => {
-            setUploadProgress((snapshot.bytesTransferred / snapshot.totalBytes) * 100); 
-        }, 
-        (error) => {
-            console.log(error);
-        }, 
-        () => {
-            getDownloadURL(uploadTask.snapshot.ref).then( async (downloadURL) => {
-            console.log('File available at', downloadURL);
-
-            try{
-                const inputs = {fileType: postType, file: downloadURL, description: postDescription, location: postLocation, comments:{"New user": "This is my forst comment"}}
-                await axios.post('http://localhost:6001/createPost', inputs)
-                .then( async (res)=>{
-                }).catch((err) =>{
-                    console.log(err);
-                });
-        
-            }catch(err){
-                console.log(err);
+        setIsLoading(true);
+        setErrorMsg('');
+        try {
+            const inputs = {
+                fileType: '',
+                file: '',
+                description: postDescription.trim(),
+                location: postLocation.trim()
+            };
+            await axios.post('/createPost', inputs);
+            setPostDescription('');
+            setPostLocation('');
+            setShowLocationInput(false);
+            setIsExpanded(false);
+            if (onPostCreated) {
+                onPostCreated();
             }
-
-
-            });
+        } catch (err) {
+            console.error(err);
+            setErrorMsg('Could not create post. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
-        );
+    };
 
+    const isPostDisabled = !postDescription.trim() || postDescription.length > 280 || isLoading;
 
-    }
+    return (
+        <div className={`inline-composer ${isExpanded ? 'expanded' : 'compact'}`}>
+            {errorMsg && <div className="alert alert-danger composer-error">{errorMsg}</div>}
 
-
-
-  return (
-    <>
-        <div className="createPostModalBg" style={isCreatPostOpen? {display: 'contents'} : {display: 'none'}} >
-            <div className="createPostContainer">
-               
-                <RxCross2 className='closeCreatePost' onClick={()=> setIsCreatePostOpen(false)} />
-                <h2 className="createPostTitle">Create post</h2>
-                <hr className="createPostHr" />
-                
-                <div className="createPostBody">
-                    <form>
-
-                    <select className="form-select" aria-label="Select Post Type" onChange={(e)=> setPostType(e.target.value)}  >
-                        <option defaultValue='photo'>Choose post type</option>
-                        <option value="photo">Photo</option>
-                        <option value="video">Video</option>
-                    </select>
-
-                        <div className="uploadBox">
-                            <input type="file" name="PostFile" id="uploadPostFile" onChange={(e)=> setPostFile(e.target.files[0])} />
-                        </div>
-                        <div className="form-floating mb-3 authFormInputs descriptionInput">
-                            <input type="text" className="form-control descriptionInput" id="floatingDescription" placeholder="Description" onChange={(e)=> setPostDescription(e.target.value)} value={postDescription}  /> 
-                            <label htmlFor="floatingDescription">Description</label>
-                        </div>
-                        <div className="form-floating mb-3 authFormInputs postLocation">
-                            <input type="text" className="form-control  postLocation" id="floatingLocation" placeholder="Location" onChange={(e)=> setPostLocation(e.target.value)}  value={postLocation}  /> 
-                            <label htmlFor="floatingLocation">Location</label>
-                        </div>
-                        {uploadProgress ?
-                            <button disabled>Uploading... {Math.round(uploadProgress)}%</button>
-                        :
-                        <button onClick={handlePostUplload}>Upload</button>
-                        }
-                    </form>
+            <div className="composer-row">
+                <div className="composer-avatar-col">
+                    {renderAvatar(username, profilePic, "composer-avatar")}
                 </div>
+                <div className="composer-input-col">
+                    <textarea
+                        ref={textareaRef}
+                        className="composer-textarea"
+                        placeholder="What's happening?"
+                        value={postDescription}
+                        onChange={(e) => setPostDescription(e.target.value)}
+                        onFocus={handleFocus}
+                        maxLength={280}
+                        rows={isExpanded ? 3 : 1}
+                    />
+                </div>
+                {!isExpanded && (
+                    <div className="composer-compact-btn-col">
+                        <button className="btn btn-primary btn-sm post-btn" disabled>
+                            Post
+                        </button>
+                    </div>
+                )}
             </div>
-        </div>
-    </>
-  )
-}
 
-export default CreatePost
+            {isExpanded && (
+                <div className="composer-expanded-options">
+                    <div className="composer-meta-row">
+                        <span className={`char-counter ${postDescription.length > 280 ? 'counter-danger' : ''}`}>
+                            {postDescription.length} / 280
+                        </span>
+
+                        {!showLocationInput ? (
+                            <button
+                                type="button"
+                                className="location-toggle-btn"
+                                onClick={() => setShowLocationInput(true)}
+                            >
+                                📍 Add location
+                            </button>
+                        ) : (
+                            <div className="composer-location-input-wrapper">
+                                <input
+                                    type="text"
+                                    className="composer-location-field"
+                                    placeholder="Location (optional)"
+                                    value={postLocation}
+                                    onChange={(e) => setPostLocation(e.target.value)}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <hr className="composer-divider" />
+
+                    <div className="composer-actions">
+                        <button type="button" className="btn-cancel" onClick={handleCancel} disabled={isLoading}>
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-primary post-btn"
+                            disabled={isPostDisabled}
+                            onClick={handlePostUpload}
+                        >
+                            {isLoading ? 'Posting...' : 'Post'}
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default CreatePost;

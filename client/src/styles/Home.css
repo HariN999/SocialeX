@@ -1,3 +1,76 @@
-.homePage{
-    height: 100vh;
+.homePageContainer {
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.homeMainContent {
+    width: var(--main-content-width);
+    max-width: var(--main-content-width);
+    flex-grow: 1;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-color);
+    padding: 24px;
+    box-sizing: border-box;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.homeHeader {
+    margin-bottom: 20px;
+}
+
+.homeHeader h2 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.emptyFeedState {
+    text-align: center;
+    padding: 48px 24px;
+    border: 1px dashed var(--border-color);
+    border-radius: 16px;
+    background-color: var(--bg-secondary);
+    margin-top: 16px;
+}
+
+.emptyFeedState h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    margin-top: 0;
+}
+
+.emptyFeedState p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.loadingFeedState {
+    text-align: center;
+    padding: 32px 0;
+    color: var(--text-secondary);
+    font-size: 15px;
+}
+
+@media (max-width: 1200px) {
+    .homeMainContent {
+        border-right: none;
+    }
+}
+
+@media (max-width: 576px) {
+    .homeMainContent {
+        width: 100vw;
+        max-width: 100vw;
+        margin-bottom: 60px;
+        padding: 16px;
+    }
 }

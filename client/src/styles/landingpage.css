@@ -179,7 +179,7 @@
     display: flex;
     /* flex-direction: row; */
     gap: 0px;
-    align-items: end;
+    align-items: flex-end;
     padding-bottom: 10vh;
     justify-content: space-evenly;
     overflow: hidden;
@@ -371,4 +371,48 @@
 
 .footer p{
     color: rgb(0, 69, 122);
+}
+
+.landing-theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 9999px;
+    transition: background-color 0.2s;
+}
+
+.landing-theme-toggle:hover {
+    background-color: var(--bg-hover);
+}
+
+[data-theme="dark"] .landingPage {
+    background-color: var(--bg-primary);
+}
+
+[data-theme="dark"] .landing-header {
+    background-color: rgba(0, 0, 0, 0.65);
+    box-shadow: none;
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="dark"] .landing-header ul li a,
+[data-theme="dark"] .landing-hero-content h1,
+[data-theme="dark"] .landing-hero-content p,
+[data-theme="dark"] .authentication-form label,
+[data-theme="dark"] .authentication-form input {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .authentication-form input {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .footer p {
+    color: var(--text-secondary);
 }

@@ -1,143 +1,186 @@
-.profilePage{
-    height: 100vh;
+.profilePageContainer {
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: var(--bg-primary);
     width: 100%;
+    box-sizing: border-box;
+}
+
+.profileMainContent {
+    width: var(--main-content-width);
+    max-width: var(--main-content-width);
+    flex-grow: 1;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-color);
+    padding: 24px;
+    box-sizing: border-box;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.profileHeader {
+    margin-bottom: 24px;
+}
+
+.profileHeader h2 {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Profile Info Detail Card */
+.profileInfoCard {
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    background-color: var(--bg-primary);
+    margin-bottom: 24px;
+}
+
+.profileInfoTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.profileDetailAvatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--bg-secondary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.profileInfoActions {
+    display: flex;
+    gap: 12px;
+}
+
+.profileOwnerActions, .profileVisitorActions {
+    display: flex;
+    gap: 8px;
+}
+
+.profileInfoDetails h3 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.profileDetailHandle {
+    color: var(--text-secondary);
+    font-size: 15px;
+    display: block;
+    margin-top: 2px;
+}
+
+.profileDetailAbout {
+    font-size: 15px;
+    color: var(--text-primary);
+    margin-top: 12px;
+    margin-bottom: 0;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.profileFollowCounts {
     display: flex;
     gap: 20px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--bg-secondary);
 }
 
-.profileCard{
-    width: 25vw;
-    height: fit-content;
-    background-color: rgba(245, 255, 255, 0.591);
-    backdrop-filter: blur(10px);
-    box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
-    position: relative;
-    top: 12vh;
-    left: 2vw;
-    border-radius: 1rem;
-    margin-right: 30px;
-    padding: 20px 0;
-
-    /* display: flex; */
-    display: none;
-    flex-direction: column;
-    align-items: center;
+.followCountItem {
+    display: flex;
+    gap: 6px;
+    font-size: 15px;
 }
 
-.profileCard img{
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    border: 3px solid rgba(56, 146, 188, 0.281);
+.countNumber {
+    font-weight: 800;
+    color: var(--text-primary);
 }
 
-.profileCard h4{
+.countLabel {
+    color: var(--text-secondary);
+}
+
+/* Edit profile card */
+.profileEditCard {
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    background-color: var(--bg-primary);
+    margin-bottom: 24px;
+}
+
+.profileEditCard h3 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.profileEditCard .form-label {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.profileEditCard input, .profileEditCard textarea {
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.editActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.profileTimelineDivider {
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.profileTimelineDivider h4 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
     margin: 0;
-    font-size: 1.2rem;
-    margin: 10px 0 5px 0;
-    color: rgba(9, 57, 179, 0.763);
 }
 
-.profileCard p{
-    margin-bottom: 20px;
-    color: rgb(87, 100, 114);
+.profileTimeline {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.emptyTimelineState {
     text-align: center;
-    width: 80%;
+    color: var(--text-secondary);
+    padding: 48px 0;
+    font-size: 16px;
 }
 
-
-.profileDetailCounts{
-    display: flex;
-    gap: 30px;
-    margin-bottom: 20px;
-    
+@media (max-width: 1200px) {
+    .profileMainContent {
+        border-right: none;
+    }
 }
 
-
-.profileDetailCounts p{
-    margin: 0;
-    color: rgb(4, 32, 55);
+@media (max-width: 576px) {
+    .profileMainContent {
+        width: 100vw;
+        max-width: 100vw;
+        margin-bottom: 60px;
+        padding: 16px;
+    }
 }
-
-.profileControlBtns{
-    display: flex;
-    gap: 30px;
-}
-
-.profileControlBtns button{
-    width: 80px;
-    border: none;
-    background-color: rgb(6, 116, 206);
-    color: aliceblue;
-    padding: 3px 5px 5px 5px;
-    border-radius: 0.3rem;
-}
-
-
-.profileEditCard{
-    width: 25vw;
-    height: fit-content;
-    background-color: rgba(245, 255, 255, 0.591);
-    backdrop-filter: blur(10px);
-    box-shadow: rgba(0, 0, 0, 0.15) 0px 5px 15px 0px;
-    position: relative;
-    top: 12vh;
-    left: 2vw;
-    border-radius: 1rem;
-    margin-right: 30px;
-    padding: 20px 0;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-.profilePostsContainer{
-    width: 46vw;
-    height: 90vh;
-    position: relative;
-    top: 12vh;
-    overflow-y: scroll;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-bottom: 30px;
-}
-
-.deletePost{
-    height: 30px;
-    display: flex;
-    align-items: center;
-}
-
-
-
-.profileFollowContainer{
-    width: 23.5vw;
-    height: 90vh;
-    /* background-color: rgba(245, 255, 255, 0.591); */
-    position: relative;
-    top: 12vh;
-    
-}
-.followContainerHeader{
-    display: flex;
-    justify-content: space-evenly;
-}
-.followContainerHeader h4{
-    font-size: 1.3rem;
-    color: rgba(3, 64, 134, 0.808);
-    cursor: pointer;
-}
-

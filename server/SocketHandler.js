@@ -4,6 +4,8 @@ import Post from './models/Post.js'
 import Stories from './models/Stories.js';
 import User from './models/Users.js'
 
+const toIdString = (id) => String(id);
+
 const SocketHandler = (socket) => {
 
     const validateChatMembership = async (chatId) => {
@@ -13,12 +15,6 @@ const SocketHandler = (socket) => {
         }
 
         try {
-            const chat = await Chats.findById(chatId);
-            if (!chat) {
-                socket.emit('error', { message: 'Chat not found' });
-                return null;
-            }
-
             const participantA = chatId.substring(0, 24);
             const participantB = chatId.substring(24);
 
@@ -29,8 +25,26 @@ const SocketHandler = (socket) => {
                 return null;
             }
 
+            let chat = await Chats.findById(chatId);
+            if (!chat) {
+                const otherUserId = socket.user.id === participantA ? participantB : participantA;
+                const otherUser = await User.findById(otherUserId);
+
+                if (!otherUser) {
+                    socket.emit('error', { message: 'User not found' });
+                    return null;
+                }
+
+                chat = await new Chats({ _id: chatId, messages: [] }).save();
+            }
+
             return chat;
         } catch (error) {
+            if (error?.code === 11000) {
+                const existingChat = await Chats.findById(chatId);
+                if (existingChat) return existingChat;
+            }
+            console.error('validateChatMembership error:', error.message);
             socket.emit('error', { message: 'Server error validating chat access' });
             return null;
         }
@@ -50,8 +64,7 @@ const SocketHandler = (socket) => {
     })
 
     socket.on("fetch-profile", async({_id})=>{
-        const user = await User.findOne({_id})
-        console.log(user);
+        const user = await User.findOne({_id}).select('-password');
         socket.emit("profile-fetched", {profile: user})
     })
 
@@ -73,16 +86,7 @@ const SocketHandler = (socket) => {
         await User.updateOne({_id: followingUserId}, {$addToSet: {followers: ownId}});
 
         const user1 = await User.findOne({_id: ownId});
-        const user2 = await User.findOne({_id: followingUserId});
         socket.emit('userFollowed', {following: user1.following});
-
-        if ( user2.following.includes(user1._id)   && user1.following.includes(user2._id) ){
-            const newChat = new Chats({
-                _id: user1._id > user2._id ? user1._id + user2._id : user2._id + user1._id
-            })
-
-            const chat = await newChat.save();
-        }
 
     });
 
@@ -109,19 +113,43 @@ const SocketHandler = (socket) => {
     });
 
     socket.on('fetch-friends', async () =>{
-        const userId = socket.user.id;
-        const userData = await User.findOne({_id: userId})
+        const userId = toIdString(socket.user.id);
+        const escapedId = userId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-        function findCommonElements(array1, array2) {
-            return array1.filter(element => array2.includes(element));
+        const chats = await Chats.find({
+            $or: [
+                { _id: { $regex: `^${escapedId}` } },
+                { _id: { $regex: `${escapedId}$` } }
+            ]
+        });
+
+        const friendsData = [];
+
+        for (const chat of chats) {
+            const participantA = chat._id.substring(0, 24);
+            const participantB = chat._id.substring(24);
+            const otherUserId = userId === participantA ? participantB : participantA;
+
+            const user = await User.findById(otherUserId, { _id: 1, username: 1, profilePic: 1 });
+            if (!user) continue;
+
+            const messages = chat.messages || [];
+            const lastMessage = messages[messages.length - 1];
+
+            friendsData.push({
+                _id: user._id,
+                username: user.username,
+                profilePic: user.profilePic,
+                lastMessage,
+                chatId: chat._id
+            });
         }
 
-        const friendsList = findCommonElements(userData.following, userData.followers);
-
-        const friendsData = await User.find(
-            { _id: { $in: friendsList } },
-            { _id: 1, username: 1, profilePic: 1 }
-          ).exec();
+        friendsData.sort((a, b) => {
+            const dateA = a.lastMessage?.date ? new Date(a.lastMessage.date).getTime() : 0;
+            const dateB = b.lastMessage?.date ? new Date(b.lastMessage.date).getTime() : 0;
+            return dateB - dateA;
+        });
 
         socket.emit("friends-data-fetched", {friendsData});
     })
@@ -141,47 +169,64 @@ const SocketHandler = (socket) => {
         try {
           const chat = await validateChatMembership(chatId);
           if (!chat) return;
-          console.log('updating messages');
           socket.emit('messages-updated', { chat });
         } catch (error) {
           console.error('Error updating messages:', error);
         }
       });
       
-      socket.on('new-message', async ({ chatId, id, text, file, date }) => {
+      socket.on('new-message', async ({ chatId, id, text, file, date }, ack) => {
         try {
           const chat = await validateChatMembership(chatId);
-          if (!chat) return;
+          if (!chat) {
+            if (typeof ack === 'function') ack({ ok: false, error: 'Chat validation failed' });
+            return;
+          }
+          if (!text || typeof text !== 'string' || !text.trim()) {
+            if (typeof ack === 'function') ack({ ok: false, error: 'Message text is required' });
+            return;
+          }
           const senderId = socket.user.id;
-          await Chats.findOneAndUpdate(
+          const updatedChat = await Chats.findOneAndUpdate(
             { _id: chatId },
-            { $addToSet: { messages: { id, text, file, senderId, date } } },
+            { $push: { messages: { id, text: text.trim(), file, senderId, date } } },
             { new: true }
           );
-      
-          const updatedChat = await Chats.findOne({ _id: chatId });
-          console.log(updatedChat);
+
+          if (!updatedChat) {
+            if (typeof ack === 'function') ack({ ok: false, error: 'Chat not found' });
+            return;
+          }
+
           socket.emit('messages-updated', { chat: updatedChat });
           socket.broadcast.to(chatId).emit('message-from-user');
+          if (typeof ack === 'function') ack({ ok: true });
         } catch (error) {
           console.error('Error adding new message:', error);
+          if (typeof ack === 'function') ack({ ok: false, error: 'Server error adding message' });
         }
       });
 
 
       socket.on('chat-user-searched', async ({username})=>{
-        const ownId = socket.user.id;
-        const user = await User.findOne({username:username});
-        if(user){
-          if (user.followers.includes(ownId) && user.following.includes(ownId)){
+        const query = (username || '').trim();
+        if (!query) {
+          socket.emit('no-searched-chat-user', { reason: 'empty' });
+          return;
+        }
 
-            socket.emit('searched-chat-user', {user});
-  
-          }else{
-            socket.emit('no-searched-chat-user');
-          }
-        }else{
-          socket.emit('no-searched-chat-user');
+        const ownId = socket.user.id;
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escaped, 'i');
+        const users = await User.find(
+          { username: regex, _id: { $ne: ownId } },
+          { _id: 1, username: 1, profilePic: 1 }
+        ).limit(10);
+
+        if (users.length > 0) {
+          socket.emit('searched-chat-users', { users });
+        } else {
+          socket.emit('no-searched-chat-user', { reason: 'not_found' });
         }
       });
 

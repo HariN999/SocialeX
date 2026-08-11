@@ -59,7 +59,6 @@ export const login = async (req, res) =>{
         delete user.password;
         const userData = {_id: user._id, username: user.username, email:user.email, profilePic:user.profilePic, about: user.about, posts: user.posts, followers: user.followers, following:user.following };
         res.status(200).json({token, user:userData});
-        console.log(token, userData);
     }catch(err){
         res.status(500).json({error: err.message});
     }
