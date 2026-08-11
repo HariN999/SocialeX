@@ -6,13 +6,15 @@ import User from './models/Users.js'
 
 const SocketHandler = (socket) => {
   
-    socket.on('postLiked', async ({userId, postId}) =>{
+    socket.on('postLiked', async ({postId}) =>{
+        const userId = socket.user.id;
         await Post.updateOne({_id: postId}, {$addToSet: {likes: userId}});
 
         socket.emit("likeUpdated");
     })
 
-    socket.on('postUnLiked', async ({userId, postId}) =>{
+    socket.on('postUnLiked', async ({postId}) =>{
+        const userId = socket.user.id;
         await Post.updateOne({_id: postId}, {$pull: {likes: userId}});
         socket.emit("likeUpdated");
     })
@@ -24,7 +26,8 @@ const SocketHandler = (socket) => {
     })
 
     
-    socket.on('updateProfile', async ({userId, profilePic, username, about})=>{
+    socket.on('updateProfile', async ({profilePic, username, about})=>{
+        const userId = socket.user.id;
         const user = await User.updateOne({_id: userId}, {profilePic: profilePic, username: username, about:about})
         socket.emit("profile-fetched", {profile: user})
     })
@@ -34,7 +37,8 @@ const SocketHandler = (socket) => {
         socket.emit('searched-user', {user});
     })
 
-    socket.on('followUser', async({ownId, followingUserId})=>{
+    socket.on('followUser', async({followingUserId})=>{
+        const ownId = socket.user.id;
         await User.updateOne({_id: ownId}, {$addToSet: {following: followingUserId}});
         await User.updateOne({_id: followingUserId}, {$addToSet: {followers: ownId}});
 
@@ -52,7 +56,8 @@ const SocketHandler = (socket) => {
 
     });
 
-    socket.on('unFollowUser', async({ownId, followingUserId})=>{
+    socket.on('unFollowUser', async({followingUserId})=>{
+        const ownId = socket.user.id;
         await User.updateOne({_id: ownId}, {$pull: {following: followingUserId}});
         await User.updateOne({_id: followingUserId}, {$pull: {followers: ownId}});
 
@@ -61,12 +66,20 @@ const SocketHandler = (socket) => {
     });
 
 
-    socket.on('makeComment', async({postId, username, comment})=>{
+    socket.on('makeComment', async({postId, comment})=>{
+        const user = await User.findById(socket.user.id);
+        if (!user) {
+            socket.emit('authentication-error', {
+                message: 'User account no longer exists'
+            });
+            return;
+        }
+        const username = user.username;
         await Post.updateOne({_id: postId}, { $push: { comments: [ username, comment]  } });
     });
 
-    socket.on('fetch-friends', async ({userId}) =>{
-
+    socket.on('fetch-friends', async () =>{
+        const userId = socket.user.id;
         const userData = await User.findOne({_id: userId})
 
         function findCommonElements(array1, array2) {
@@ -103,8 +116,9 @@ const SocketHandler = (socket) => {
         }
       });
       
-      socket.on('new-message', async ({ chatId, id, text, file, senderId, date }) => {
+      socket.on('new-message', async ({ chatId, id, text, file, date }) => {
         try {
+          const senderId = socket.user.id;
           await Chats.findOneAndUpdate(
             { _id: chatId },
             { $addToSet: { messages: { id, text, file, senderId, date } } },
@@ -121,7 +135,8 @@ const SocketHandler = (socket) => {
       });
 
 
-      socket.on('chat-user-searched', async ({ownId, username})=>{
+      socket.on('chat-user-searched', async ({username})=>{
+        const ownId = socket.user.id;
         const user = await User.findOne({username:username});
         if(user){
           if (user.followers.includes(ownId) && user.following.includes(ownId)){
@@ -150,7 +165,17 @@ const SocketHandler = (socket) => {
       });
 
 
-      socket.on('create-new-story', async({userId, username, userPic, fileType, file, text})=>{
+      socket.on('create-new-story', async({fileType, file, text})=>{
+        const userId = socket.user.id;
+        const user = await User.findById(userId);
+        if (!user) {
+            socket.emit('authentication-error', {
+                message: 'User account no longer exists'
+            });
+            return;
+        }
+        const username = user.username;
+        const userPic = user.profilePic;
         const newStory = new Stories({userId, username, userPic, fileType, file, text});
         await newStory.save();
       })
@@ -160,7 +185,8 @@ const SocketHandler = (socket) => {
         socket.emit('stories-fetched', {stories});
       });
 
-      socket.on('story-played', async ({storyId, userId})=>{
+      socket.on('story-played', async ({storyId})=>{
+        const userId = socket.user.id;
         await Stories.updateOne({_id: storyId}, {$addToSet: {viewers: userId}});
         
       })

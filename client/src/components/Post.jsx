@@ -38,12 +38,12 @@ const Post = () => {
     //   Like
 
     const handleLike = (userId, postId) =>{
-        socket.emit('postLiked', {userId, postId});
+        socket.emit('postLiked', {postId});
 
     }
 
     const handleUnLike = (userId, postId) =>{
-        socket.emit('postUnLiked', {userId, postId});
+        socket.emit('postUnLiked', {postId});
 
     }
 
@@ -65,7 +65,7 @@ const Post = () => {
     const handleFollow = async (userId) =>{
         // ownId = current user Id
         // followingUserId = user you want to follow
-        socket.emit('followUser', {ownId: localStorage.getItem('userId'), followingUserId: userId});
+        socket.emit('followUser', {followingUserId: userId});
     }
 
 
@@ -73,7 +73,7 @@ const Post = () => {
     const [comment, setComment] = useState('');
 
     const handleComment = (postId, username)=>{
-        socket.emit('makeComment', {postId, username, comment});
+        socket.emit('makeComment', {postId, comment});
     }
 
 

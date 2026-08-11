@@ -46,7 +46,7 @@ const [isUpdating, setIsUpdating] = useState(false);
 
 
   const handleUpdate = async () =>{
-    socket.emit('updateProfile', {userId: userProfile._id, profilePic: updateProfilePic, username: updateProfileUsername, about: updateProfileAbout});
+    socket.emit('updateProfile', {profilePic: updateProfilePic, username: updateProfileUsername, about: updateProfileAbout});
     setIsUpdating(false);
   }
 
@@ -67,20 +67,20 @@ const [isUpdating, setIsUpdating] = useState(false);
   };
 
   const handleLike = (userId, postId) =>{
-    socket.emit('postLiked', {userId, postId});
+    socket.emit('postLiked', {postId});
 
 }
 
 const handleUnLike = (userId, postId) =>{
-    socket.emit('postUnLiked', {userId, postId});
+    socket.emit('postUnLiked', {postId});
 
 }
 
 const handleFollow = async (userId) =>{
-  socket.emit('followUser', {ownId: localStorage.getItem('userId'), followingUserId: userId});
+  socket.emit('followUser', {followingUserId: userId});
 }
 const handleUnFollow = async (userId) =>{
-  socket.emit('unFollowUser', {ownId: localStorage.getItem('userId'), followingUserId: userId});
+  socket.emit('unFollowUser', {followingUserId: userId});
 }
 
 useEffect(()=>{
@@ -100,7 +100,7 @@ const [followDisplayType, setFollowDisplayType] = useState('followers');
 const [comment, setComment] = useState('');
 
     const handleComment = (postId, username)=>{
-        socket.emit('makeComment', {postId, username, comment});
+        socket.emit('makeComment', {postId, comment});
         setComment('');
     }
 

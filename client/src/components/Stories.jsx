@@ -36,7 +36,7 @@ const Stories = () => {
       const handleOpenStory = async (story) =>{
        
         setStory(story);
-        await socket.emit('story-played', {storyId: story._id, userId: localStorage.getItem('userId')});
+        await socket.emit('story-played', {storyId: story._id});
         setIsStoryPlaying(true);
         
       }

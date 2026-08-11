@@ -44,7 +44,7 @@ const CreateStory = () => {
 
             try{
                  
-                await socket.emit('create-new-story', {userId: localStorage.getItem('userId'), username: localStorage.getItem('username'), userPic: localStorage.getItem('profilePic'), fileType: storyType, file: downloadURL, text: storyDescription});
+                await socket.emit('create-new-story', {fileType: storyType, file: downloadURL, text: storyDescription});
                 setIsCreateStoryOpen(false);
                 setStoryDescription('');
                 setStoryFile(null);

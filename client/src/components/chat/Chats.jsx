@@ -10,7 +10,7 @@ const Chats = () => {
 
   useEffect(()=>{
 
-    socket.emit('fetch-friends', {userId});
+    socket.emit('fetch-friends');
 
     socket.on("friends-data-fetched", ({friendsData})=>{
       setChatFriends(friendsData);

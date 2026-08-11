@@ -37,7 +37,7 @@ const Input = () => {
 
             try{
               let date = new Date() 
-              await socket.emit('new-message', {chatId: chatData.chatId ,id: uuid(), text: text, file: downloadURL, senderId: userId, date: date});
+              await socket.emit('new-message', {chatId: chatData.chatId ,id: uuid(), text: text, file: downloadURL, date: date});
               setUploadProgress();
               setText('');
               setFile(null);
@@ -53,7 +53,7 @@ const Input = () => {
       }else{
 
         let date = new Date() 
-        await socket.emit('new-message', {chatId: chatData.chatId ,id: uuid(), text: text,file: '', senderId: userId, date: date});
+        await socket.emit('new-message', {chatId: chatData.chatId ,id: uuid(), text: text,file: '', date: date});
         setText('');
       }
 
