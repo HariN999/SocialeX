@@ -30,7 +30,10 @@ app.use(morgan("common"));
 
 app.use(bodyParser.json({limit: "30mb", extended: true}))
 app.use(bodyParser.urlencoded({limit: "30mb", extended: true}));
-app.use(cors());
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:3000';
+app.use(cors({
+    origin: allowedOrigin
+}));
 
 
 app.use('', authRoutes);
@@ -39,7 +42,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: '*',
+        origin: allowedOrigin,
         methods: ['GET', 'POST', 'PUT', 'DELETE']
     }
 });
