@@ -8,9 +8,12 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
 import authRoutes from './routes/Route.js';
 import SocketHandler from './SocketHandler.js';
+
+dotenv.config();
 
 
 // config
@@ -49,9 +52,10 @@ io.on("connection", (socket) =>{
 
 // mongoose setup
 
-const PORT = 6001;
+const PORT = process.env.PORT || 6001;
+const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/socialeX';
 
-mongoose.connect('mongodb://localhost:27017/socialeX', { 
+mongoose.connect(MONGO_URL, { 
         useNewUrlParser: true,
         useUnifiedTopology: true,
     }

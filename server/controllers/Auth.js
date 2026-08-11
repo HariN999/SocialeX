@@ -7,7 +7,10 @@ import Users from '../models/Users.js';
 
 const generateToken =(id) =>{
 
-    const jwtSecret = 'thisIsTheSceretCodeForTheJWTToken';
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+        throw new Error("JWT_SECRET environment variable is missing!");
+    }
 
     return jwt.sign({id}, jwtSecret, {
         expiresIn: '30d',
